@@ -1,4 +1,4 @@
-# AI-Driven-Forecasting-System-for-Pollution-Source-Identification-and-Policy-Decision-Support
+# AI-Driven Forecasting System for Pollution Source Identification and Policy Decision Support
 Academic project repository containing the complete development, research, datasets, models, and documentation for our Third-Year Capstone Project 1 and B.E. Final Year Capstone Project 2.
 
 - Link to Synopsis : [Synopsis Document](https://docs.google.com/document/d/126vY7JX1dDhDIRNmvFwCMQNKw8xch68hi0Tn8-m4uVY/edit?usp=sharing)
