@@ -1,0 +1,21 @@
+station,station_encoded,latitude,longitude,display_name
+"Bandra Kurla Complex, Mumbai",0,19.0606629,72.8546797,Bandra Kurla Complex
+"Borivali East MPCB, Mumbai",1,19.2187,72.8655,Borivali East MPCB
+"Borivali East, Mumbai",2,19.2187187,72.8654856,Borivali East
+"Chakala-Andheri East, Mumbai",3,19.1136556,72.8585799,Chakala-Andheri East
+"Chhatrapati Shivaji Intl. Airport (T2), Mumbai",4,19.0896,72.8656,Chhatrapati Shivaji Intl. Airport (T2)
+"Colaba, Mumbai",5,18.915091,72.8259691,Colaba
+"Deonar, Mumbai",6,19.0475502,72.9051895,Deonar
+"Kandivali East, Mumbai",7,19.1990695,72.8482288,Kandivali East
+"Khindipada-Bhandup West, Mumbai",8,19.1605651,72.9289692,Khindipada-Bhandup West
+"Kurla, Mumbai",9,19.0652797,72.8793805,Kurla
+"Mahape, Navi Mumbai",10,19.1093012,73.0235724,"Mahape, Navi Mumbai"
+"Malad West, Mumbai",11,19.1852851,72.8358611,Malad West
+"Mazgaon, Mumbai",12,18.9697337,72.8406201,Mazgaon
+"Mulund West, Mumbai",13,19.1719717,72.9511956,Mulund West
+"Navy Nagar-Colaba, Mumbai",14,18.9074266,72.8083029,Navy Nagar-Colaba
+"Nerul, Navi Mumbai",15,19.0335938,73.018164,"Nerul, Navi Mumbai"
+"Powai, Mumbai",16,19.1187195,72.9073476,Powai
+"Siddharth Nagar Worli, Mumbai",17,19.017,72.815,Siddharth Nagar Worli
+"Sion, Mumbai",18,19.0465213,72.8632834,Sion
+"Worli, Mumbai",19,18.9988405,72.8170327,Worli
