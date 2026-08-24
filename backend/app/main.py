@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from app.api.health import router as health_router
 from app.api.station import router as station_router
+from app.api.pollution import router as pollution_router
 
 app=FastAPI(
     title="AI-Driven Forecasting System for Pollution Source Identification and Policy Decision Support",
@@ -10,6 +11,7 @@ app=FastAPI(
 
 app.include_router(health_router)
 app.include_router(station_router) 
+app.include_router(pollution_router)
 
 @app.get("/")
 def root():

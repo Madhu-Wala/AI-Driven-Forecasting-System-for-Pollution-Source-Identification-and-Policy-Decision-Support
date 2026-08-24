@@ -55,3 +55,6 @@ dist/
 # Notebook Checkpoints
 # =====================================
 .ipynb_checkpoints/
+
+# test files
+test_station_mapping.py
