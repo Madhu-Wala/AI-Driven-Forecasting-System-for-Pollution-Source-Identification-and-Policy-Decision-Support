@@ -6,6 +6,7 @@ from app.api.weather import router as weather_router
 from app.api.prediction import router as prediction_router
 from app.api.air_quality import router as air_quality_router
 from app.api.shap import router as shap_router
+from app.api.advisory import router as advisory_router
 
 app=FastAPI(
     title="AI-Driven Forecasting System for Pollution Source Identification and Policy Decision Support",
@@ -20,6 +21,7 @@ app.include_router(weather_router)
 #app.include_router(prediction_router) # Old
 app.include_router(air_quality_router) # prediction
 app.include_router(shap_router)
+app.include_router(advisory_router)
 
 @app.get("/")
 def root():

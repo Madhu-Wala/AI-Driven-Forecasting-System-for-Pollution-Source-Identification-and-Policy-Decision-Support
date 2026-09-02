@@ -61,3 +61,13 @@ test_station_mapping.py
 test_weather.py
 test_prediction.py
 test_google_api.py
+test_advisory_levels.py
+test_advisory_retrieval.py
+test_evidence_filter.py
+test_evidence_selector.py
+test_metadata_retrieval.py
+test_rag_context.py
+test_rag_loader.py
+test_rag_metadata.py
+test_rag_retrieval.py
+build_rag.py
