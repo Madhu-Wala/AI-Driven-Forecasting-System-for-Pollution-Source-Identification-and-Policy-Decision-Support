@@ -6,14 +6,11 @@ from dotenv import load_dotenv
 
 from app.utils.station_mapping import find_nearest_historical_station
 
-from app.services.providers.waqi_provider import (
-    get_all_mumbai_station_details
+from app.services.providers.google_air_quality_provider import (
+    get_current_air_quality
 )
 
-from app.services.providers.cpcb_provider import (
-    get_mumbai_pollution
-)
-
+from app.utils.cache import get_cache, set_cache
 
 # ============================================================
 # Configuration
@@ -148,6 +145,34 @@ def load_historical_data():
 
     return df
 
+# ============================================================
+# AQI Color
+# ============================================================
+
+def get_aqi_color(aqi):
+
+    if aqi is None:
+        return None
+
+    aqi = float(aqi)
+
+    if aqi <= 50:
+        return "#00E400"
+
+    elif aqi <= 100:
+        return "#FFFF00"
+
+    elif aqi <= 200:
+        return "#FF7E00"
+
+    elif aqi <= 300:
+        return "#FF0000"
+
+    elif aqi <= 400:
+        return "#8F3F97"
+
+    else:
+        return "#7E0023"
 
 # ============================================================
 # Value Validation
@@ -798,185 +823,169 @@ def normalize_cpcb_records(
         stations.values()
     )
 
-
 # ============================================================
-# Main Pollution Service
+# Google-based Mumbai Pollution
 # ============================================================
 
-def get_current_mumbai_pollution():
+async def get_current_mumbai_pollution():
+    cache_key = "mumbai_pollution_20_stations"
+
+    cached_data = get_cache(cache_key)
+
+    if cached_data is not None:
+        logger.info("Mumbai pollution map cache HIT")
+        return cached_data
+
+    logger.info("Mumbai pollution map cache MISS")
+
+    historical_df = load_historical_data()
 
     # --------------------------------------------------------
-    # Historical data
+    # Get unique Mumbai station locations
     # --------------------------------------------------------
 
-    historical_df = (
-        load_historical_data()
+    stations_df = (
+        historical_df[
+            [
+                "station",
+                "latitude",
+                "longitude"
+            ]
+        ]
+        .dropna()
+        .drop_duplicates(
+            subset=[
+                "station"
+            ]
+        )
     )
 
-    # ========================================================
-    # WAQI
-    # ========================================================
+    if stations_df.empty:
 
-    try:
-
-        logger.info(
-            "Fetching Mumbai pollution data from WAQI..."
+        raise RuntimeError(
+            "No Mumbai station locations found "
+            "in historical dataset."
         )
 
-        waqi_data = (
-            get_all_mumbai_station_details()
+    logger.info(
+        "Fetching Google AQI for %d Mumbai stations...",
+        len(stations_df)
+    )
+
+    results = []
+
+    # --------------------------------------------------------
+    # Query Google for every station location
+    # --------------------------------------------------------
+
+    for _, station in stations_df.iterrows():
+
+        station_name = station["station"]
+
+        latitude = float(
+            station["latitude"]
         )
 
-        if not waqi_data:
+        longitude = float(
+            station["longitude"]
+        )
 
-            raise RuntimeError(
-                "WAQI returned no station data."
+        try:
+
+            google_data = await get_current_air_quality(
+                latitude=latitude,
+                longitude=longitude
             )
 
-        results = []
+            # ------------------------------------------------
+            # Find India CPCB AQI
+            # ------------------------------------------------
 
-        for station_data in waqi_data:
+            india_aqi = None
 
-            try:
+            for index in google_data.get(
+                "indexes",
+                []
+            ):
 
-                normalized = (
-                    normalize_waqi_station(
-                        station_data
+                if index.get("code") == "ind_cpcb":
+
+                    india_aqi = index.get(
+                        "aqi"
                     )
-                )
 
-                cleaned = (
-                    clean_station_data(
-                        normalized,
-                        historical_df
-                    )
-                )
+                    break
 
-                results.append(
-                    cleaned
-                )
-
-            except Exception as station_error:
-
-                station_name = (
-                    station_data
-                    .get("city", {})
-                    .get(
-                        "name",
-                        "Unknown station"
-                    )
-                    if isinstance(
-                        station_data,
-                        dict
-                    )
-                    else "Unknown station"
-                )
+            if india_aqi is None:
 
                 logger.warning(
-                    "Skipping WAQI station '%s': %s",
+                    "Google AQI unavailable for station '%s'",
+                    station_name
+                )
+
+                continue
+
+            # ------------------------------------------------
+            # Build map record
+            # ------------------------------------------------
+
+            results.append({
+
+                "station_name":
                     station_name,
-                    station_error
-                )
 
-        if results:
+                "latitude":
+                    latitude,
 
-            logger.info(
-                "WAQI successfully provided "
-                "%d usable stations.",
-                len(results)
-            )
+                "longitude":
+                    longitude,
 
-            return results
+                "aqi":
+                    int(india_aqi),
 
-        raise RuntimeError(
-            "WAQI returned data, but no usable "
-            "stations remained after validation."
-        )
-
-    except Exception as waqi_error:
-
-        logger.warning(
-            "WAQI provider failed: %s",
-            waqi_error
-        )
-
-    # ========================================================
-    # CPCB FALLBACK
-    # ========================================================
-
-    try:
-
-        logger.info(
-            "Attempting CPCB pollution provider..."
-        )
-
-        cpcb_records = (
-            get_mumbai_pollution()
-        )
-
-        if not cpcb_records:
-
-            raise RuntimeError(
-                "CPCB returned no pollution records."
-            )
-
-        cpcb_stations = (
-            normalize_cpcb_records(
-                cpcb_records
-            )
-        )
-
-        results = []
-
-        for station in cpcb_stations:
-
-            try:
-
-                cleaned = (
-                    clean_station_data(
-                        station,
-                        historical_df
+                "color":
+                    get_aqi_color(
+                        india_aqi
                     )
-                )
 
-                results.append(
-                    cleaned
-                )
-
-            except Exception as station_error:
-
-                logger.warning(
-                    "Skipping CPCB station '%s': %s",
-                    station.get(
-                        "station",
-                        "Unknown station"
-                    ),
-                    station_error
-                )
-
-        if results:
+            })
 
             logger.info(
-                "CPCB successfully provided "
-                "%d usable stations.",
-                len(results)
+                "Google AQI: %s = %s",
+                station_name,
+                india_aqi
             )
 
-            return results
+        except Exception as station_error:
+
+            logger.warning(
+                "Google AQI failed for station '%s': %s",
+                station_name,
+                station_error
+            )
+
+    # --------------------------------------------------------
+    # Make sure at least one station worked
+    # --------------------------------------------------------
+
+    if not results:
 
         raise RuntimeError(
-            "CPCB returned data, but no usable "
-            "stations remained after validation."
+            "Google Air Quality API did not return "
+            "usable AQI data for any Mumbai station."
         )
 
-    except Exception as cpcb_error:
+    logger.info(
+        "Google successfully provided AQI for %d stations.",
+        len(results)
+    )
 
-        logger.error(
-            "CPCB provider failed: %s",
-            cpcb_error
-        )
+        # Cache the complete 20-station map response
+    # for 15 minutes.
+    set_cache(
+        cache_key,
+        results,
+        ttl_seconds=15 * 60
+    )
 
-        raise RuntimeError(
-            "Both WAQI and CPCB providers failed "
-            "to provide usable pollution data."
-        ) from cpcb_error
+    return results
