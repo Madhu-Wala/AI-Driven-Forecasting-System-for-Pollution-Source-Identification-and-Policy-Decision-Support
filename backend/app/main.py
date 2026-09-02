@@ -17,8 +17,8 @@ app.include_router(health_router)
 app.include_router(station_router) 
 app.include_router(pollution_router)
 app.include_router(weather_router)
-app.include_router(prediction_router)
-app.include_router(air_quality_router)
+#app.include_router(prediction_router) # Old
+app.include_router(air_quality_router) # prediction
 app.include_router(shap_router)
 
 @app.get("/")

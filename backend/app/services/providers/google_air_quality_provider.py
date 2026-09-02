@@ -1,6 +1,7 @@
 import os
 import httpx
 from dotenv import load_dotenv
+from app.utils.cache import get_cache, set_cache
 
 load_dotenv()
 
@@ -18,8 +19,30 @@ FORECAST_URL = (
 
 
 async def get_current_air_quality(latitude: float, longitude: float):
+
     if not GOOGLE_AIR_QUALITY_API_KEY:
-        raise RuntimeError("Google Air Quality API key is not configured")
+        raise RuntimeError(
+            "Google Air Quality API key is not configured"
+        )
+
+    # Round coordinates so nearby requests share the same cache.
+    latitude = round(float(latitude), 3)
+    longitude = round(float(longitude), 3)
+
+    cache_key = f"google_aq:{latitude}:{longitude}"
+
+    # Check cache first.
+    cached_data = get_cache(cache_key)
+
+    if cached_data is not None:
+        print(
+            f"Google AQ cache HIT: {latitude}, {longitude}"
+        )
+        return cached_data
+
+    print(
+        f"Google AQ cache MISS: {latitude}, {longitude}"
+    )
 
     params = {
         "key": GOOGLE_AIR_QUALITY_API_KEY
@@ -49,7 +72,16 @@ async def get_current_air_quality(latitude: float, longitude: float):
 
     response.raise_for_status()
 
-    return response.json()
+    data = response.json()
+
+    # Cache Google response for 15 minutes.
+    set_cache(
+        cache_key,
+        data,
+        ttl_seconds=15 * 60
+    )
+
+    return data
 
 from datetime import datetime, timedelta, timezone
 
