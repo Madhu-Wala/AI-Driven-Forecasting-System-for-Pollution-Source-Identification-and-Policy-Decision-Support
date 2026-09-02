@@ -58,3 +58,6 @@ dist/
 
 # test files
 test_station_mapping.py
+test_weather.py
+test_prediction.py
+test_google_api.py
