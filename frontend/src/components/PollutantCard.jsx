@@ -1,0 +1,2 @@
+const labels = { pm25: 'PM2.5', pm10: 'PM10', no2: 'NO₂', so2: 'SO₂', co: 'CO', o3: 'O₃', nh3: 'NH₃' }
+export default function PollutantCard({ name, pollutant }) { const value = typeof pollutant === 'object' ? pollutant.value : pollutant; if (value === null || value === undefined) return null; return <article className="pollutant-card"><span className="pollutant-name">{labels[name] || name.toUpperCase()}</span><strong>{value}</strong><span>{pollutant?.unit || 'µg/m³'}</span></article> }
