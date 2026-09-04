@@ -8,3 +8,4 @@ Academic project repository containing the complete development, research, datas
 - Link to Figma Design : [Figma](https://proud-clad-63688256.figma.site/) 
 - Link to Research Document : [Document](https://docs.google.com/document/d/1rDY83MBeAQXwieENVmpg2IYuJSEuRd1cJ1N1KzCjc08/edit?usp=sharing)
 - IEEE Conference Paper Template : [Sample](https://www.overleaf.com/latex/templates/ieee-conference-template/grfzhhncsfqn.pdf)
+- Research Paper : [Draft](https://docs.google.com/document/d/1RYT12U65WfYmSAoWH9fTsjOLWK1PYcqSpQ-yf27DT4E/edit?usp=sharing)
