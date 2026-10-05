@@ -1,0 +1,36 @@
+name: Hourly Air Quality Ingestion
+
+on:
+  schedule:
+    # Runs every hour at 17 minutes past the hour (UTC)
+    - cron: "17 * * * *"
+
+  workflow_dispatch:
+
+concurrency:
+  group: hourly-air-quality-ingestion
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r backend/requirements.txt
+
+      - name: Run hourly ingestion
+        env:
+          GOOGLE_AIR_QUALITY_API_KEY: ${{ secrets.GOOGLE_AIR_QUALITY_API_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python backend/scripts/ingest_air_quality.py
