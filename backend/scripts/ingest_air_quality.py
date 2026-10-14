@@ -292,7 +292,7 @@ def extract_pollutants(pollutants):
 def fetch_station_history(
     latitude,
     longitude,
-    hours=3
+    hours=24
 ):
 
     payload = {
