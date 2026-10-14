@@ -1,6 +1,6 @@
 name: Hourly Air Quality Ingestion
 
-on:
+'on':
   schedule:
     # Runs every hour at 17 minutes past the hour (UTC)
     - cron: "17 * * * *"
