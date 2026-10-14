@@ -37,7 +37,33 @@ def validate_environment():
 def get_database_connection():
     return psycopg2.connect(DATABASE_URL)
 
+# ============================================================
+# DELETE RECORDS OLDER THAN 31 DAYS
+# ============================================================
 
+def delete_old_records(conn):
+    """
+    Delete records whose timestamp is older than
+    31 days from the current India time.
+    """
+
+    with conn.cursor() as cursor:
+        cursor.execute("""
+            DELETE FROM public.air_quality_data
+            WHERE timestamp < (
+                CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata'
+            ) - INTERVAL '31 days';
+        """)
+
+        deleted_count = cursor.rowcount
+
+    conn.commit()
+
+    print(
+        f"Old records deleted: {deleted_count}"
+    )
+
+    return deleted_count
 # ============================================================
 # STATIONS
 # ============================================================
@@ -459,6 +485,15 @@ def main():
     print("=" * 70)
 
     conn = get_database_connection()
+
+    try:
+        print("\nCleaning up records older than 31 days...")
+        delete_old_records(conn)
+    except Exception as e:
+        conn.close()
+        raise RuntimeError(
+            f"Old record cleanup failed: {e}"
+        ) from e
 
     total_received = 0
     total_inserted = 0
