@@ -384,7 +384,7 @@ def normalize_records(
     return records
 
 INSERT_SQL = """
-INSERT INTO "air_quality-data" (
+INSERT INTO "air_quality_data" (
     station_id,
     station_name,
     latitude,
