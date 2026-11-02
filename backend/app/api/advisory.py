@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-
+import traceback
 from app.models.advisory import AdvisoryRequest
 from app.services.air_quality_service import get_current
 from app.services.aqi_service import classify_aqi
@@ -119,6 +119,7 @@ async def generate_advisory(request: AdvisoryRequest):
         }
 
     except Exception as e:
+        traceback.print_exc()  # Print the traceback to the console for debugging
 
         raise HTTPException(
             status_code=503,

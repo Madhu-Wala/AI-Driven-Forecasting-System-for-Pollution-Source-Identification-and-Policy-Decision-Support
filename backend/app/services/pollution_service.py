@@ -11,7 +11,7 @@ from app.services.providers.google_air_quality_provider import (
 )
 
 from app.utils.cache import get_cache, set_cache
-
+from app.database.connection import get_database_connection
 # ============================================================
 # Configuration
 # ============================================================
@@ -827,165 +827,285 @@ def normalize_cpcb_records(
 # Google-based Mumbai Pollution
 # ============================================================
 
-async def get_current_mumbai_pollution():
-    cache_key = "mumbai_pollution_20_stations"
+# async def get_current_mumbai_pollution():
+#     cache_key = "mumbai_pollution_20_stations"
 
-    cached_data = get_cache(cache_key)
+#     cached_data = get_cache(cache_key)
 
-    if cached_data is not None:
-        logger.info("Mumbai pollution map cache HIT")
-        return cached_data
+#     if cached_data is not None:
+#         logger.info("Mumbai pollution map cache HIT")
+#         return cached_data
 
-    logger.info("Mumbai pollution map cache MISS")
+#     logger.info("Mumbai pollution map cache MISS")
 
-    historical_df = load_historical_data()
+#     historical_df = load_historical_data()
 
-    # --------------------------------------------------------
-    # Get unique Mumbai station locations
-    # --------------------------------------------------------
+#     # --------------------------------------------------------
+#     # Get unique Mumbai station locations
+#     # --------------------------------------------------------
 
-    stations_df = (
-        historical_df[
-            [
-                "station",
-                "latitude",
-                "longitude"
-            ]
-        ]
-        .dropna()
-        .drop_duplicates(
-            subset=[
-                "station"
-            ]
-        )
-    )
+#     stations_df = (
+#         historical_df[
+#             [
+#                 "station",
+#                 "latitude",
+#                 "longitude"
+#             ]
+#         ]
+#         .dropna()
+#         .drop_duplicates(
+#             subset=[
+#                 "station"
+#             ]
+#         )
+#     )
 
-    if stations_df.empty:
+#     if stations_df.empty:
 
-        raise RuntimeError(
-            "No Mumbai station locations found "
-            "in historical dataset."
-        )
+#         raise RuntimeError(
+#             "No Mumbai station locations found "
+#             "in historical dataset."
+#         )
 
-    logger.info(
-        "Fetching Google AQI for %d Mumbai stations...",
-        len(stations_df)
-    )
+#     logger.info(
+#         "Fetching Google AQI for %d Mumbai stations...",
+#         len(stations_df)
+#     )
 
-    results = []
+#     results = []
 
-    # --------------------------------------------------------
-    # Query Google for every station location
-    # --------------------------------------------------------
+#     # --------------------------------------------------------
+#     # Query Google for every station location
+#     # --------------------------------------------------------
 
-    for _, station in stations_df.iterrows():
+#     for _, station in stations_df.iterrows():
 
-        station_name = station["station"]
+#         station_name = station["station"]
 
-        latitude = float(
-            station["latitude"]
-        )
+#         latitude = float(
+#             station["latitude"]
+#         )
 
-        longitude = float(
-            station["longitude"]
-        )
+#         longitude = float(
+#             station["longitude"]
+#         )
 
-        try:
+#         try:
 
-            google_data = await get_current_air_quality(
-                latitude=latitude,
-                longitude=longitude
-            )
+#             google_data = await get_current_air_quality(
+#                 latitude=latitude,
+#                 longitude=longitude
+#             )
 
-            # ------------------------------------------------
-            # Find India CPCB AQI
-            # ------------------------------------------------
+#             # ------------------------------------------------
+#             # Find India CPCB AQI
+#             # ------------------------------------------------
 
-            india_aqi = None
+#             india_aqi = None
 
-            for index in google_data.get(
-                "indexes",
-                []
-            ):
+#             for index in google_data.get(
+#                 "indexes",
+#                 []
+#             ):
 
-                if index.get("code") == "ind_cpcb":
+#                 if index.get("code") == "ind_cpcb":
 
-                    india_aqi = index.get(
-                        "aqi"
-                    )
+#                     india_aqi = index.get(
+#                         "aqi"
+#                     )
 
-                    break
+#                     break
 
-            if india_aqi is None:
+#             if india_aqi is None:
 
-                logger.warning(
-                    "Google AQI unavailable for station '%s'",
-                    station_name
-                )
+#                 logger.warning(
+#                     "Google AQI unavailable for station '%s'",
+#                     station_name
+#                 )
 
-                continue
+#                 continue
 
-            # ------------------------------------------------
-            # Build map record
-            # ------------------------------------------------
+#             # ------------------------------------------------
+#             # Build map record
+#             # ------------------------------------------------
+
+#             results.append({
+
+#                 "station_name":
+#                     station_name,
+
+#                 "latitude":
+#                     latitude,
+
+#                 "longitude":
+#                     longitude,
+
+#                 "aqi":
+#                     int(india_aqi),
+
+#                 "color":
+#                     get_aqi_color(
+#                         india_aqi
+#                     )
+
+#             })
+
+#             logger.info(
+#                 "Google AQI: %s = %s",
+#                 station_name,
+#                 india_aqi
+#             )
+
+#         except Exception as station_error:
+
+#             logger.warning(
+#                 "Google AQI failed for station '%s': %s",
+#                 station_name,
+#                 station_error
+#             )
+
+#     # --------------------------------------------------------
+#     # Make sure at least one station worked
+#     # --------------------------------------------------------
+
+#     if not results:
+
+#         raise RuntimeError(
+#             "Google Air Quality API did not return "
+#             "usable AQI data for any Mumbai station."
+#         )
+
+#     logger.info(
+#         "Google successfully provided AQI for %d stations.",
+#         len(results)
+#     )
+
+#         # Cache the complete 20-station map response
+#     # for 15 minutes.
+#     set_cache(
+#         cache_key,
+#         results,
+#         ttl_seconds=15 * 60
+#     )
+
+#     return results
+
+# ============================================================
+# Database-based Mumbai Pollution
+# ============================================================
+
+def get_current_mumbai_pollution():
+
+    logger.info("Fetching latest Mumbai pollution data from Neon DB")
+
+    conn = None
+
+    try:
+        conn = get_database_connection()
+
+        query = """
+            SELECT DISTINCT ON (station_id)
+                station_id,
+                station_name,
+                latitude,
+                longitude,
+                timestamp,
+                aqi,
+                aqi_category,
+                pm25,
+                pm10,
+                no2,
+                so2,
+                co,
+                o3,
+                source
+
+            FROM public.air_quality_data
+
+            WHERE station_id IS NOT NULL
+              AND timestamp IS NOT NULL
+
+            ORDER BY
+                station_id,
+                timestamp DESC NULLS LAST;
+        """
+
+        with conn.cursor() as cursor:
+            cursor.execute(query)
+            rows = cursor.fetchall()
+
+        results = []
+
+        for row in rows:
+
+            (
+                station_id,
+                station_name,
+                latitude,
+                longitude,
+                timestamp,
+                aqi,
+                aqi_category,
+                pm25,
+                pm10,
+                no2,
+                so2,
+                co,
+                o3,
+                data_source
+            ) = row
+
+            # Convert database numeric values
+            # into JSON-friendly numbers.
+
+            aqi_value = float(aqi) if aqi is not None else None
 
             results.append({
 
-                "station_name":
-                    station_name,
+                "station_id": station_id,
 
-                "latitude":
-                    latitude,
+                "station_name": station_name,
 
-                "longitude":
-                    longitude,
+                "latitude": float(latitude) if latitude is not None else None,
 
-                "aqi":
-                    int(india_aqi),
+                "longitude": float(longitude) if longitude is not None else None,
 
-                "color":
-                    get_aqi_color(
-                        india_aqi
-                    )
+                "timestamp": timestamp.isoformat(),
 
+                "aqi": aqi_value,
+
+                "aqi_category": aqi_category,
+
+                "color": get_aqi_color(aqi_value),
+
+                "pollutants": {
+                    "pm25": float(pm25) if pm25 is not None else None,
+                    "pm10": float(pm10) if pm10 is not None else None,
+                    "no2": float(no2) if no2 is not None else None,
+                    "so2": float(so2) if so2 is not None else None,
+                    "co": float(co) if co is not None else None,
+                    "o3": float(o3) if o3 is not None else None
+                },
+
+                "data_source": data_source
             })
 
-            logger.info(
-                "Google AQI: %s = %s",
-                station_name,
-                india_aqi
-            )
-
-        except Exception as station_error:
-
-            logger.warning(
-                "Google AQI failed for station '%s': %s",
-                station_name,
-                station_error
-            )
-
-    # --------------------------------------------------------
-    # Make sure at least one station worked
-    # --------------------------------------------------------
-
-    if not results:
-
-        raise RuntimeError(
-            "Google Air Quality API did not return "
-            "usable AQI data for any Mumbai station."
+        logger.info(
+            "Successfully fetched latest records for %d stations from Neon DB",
+            len(results)
         )
 
-    logger.info(
-        "Google successfully provided AQI for %d stations.",
-        len(results)
-    )
+        return results
 
-        # Cache the complete 20-station map response
-    # for 15 minutes.
-    set_cache(
-        cache_key,
-        results,
-        ttl_seconds=15 * 60
-    )
+    except Exception as e:
 
-    return results
+        logger.exception("Failed to fetch pollution data from Neon DB")
+
+        raise RuntimeError(
+            f"Unable to fetch pollution data from database: {str(e)}"
+        ) from e
+
+    finally:
+
+        if conn is not None:
+            conn.close()

@@ -12,18 +12,18 @@ router = APIRouter(
 
 
 @router.get("/current")
-async def current_pollution():
+def current_pollution():
     """
-    Return current Google-based AQI information
+    Return current Neon PostgreSQL Database-based AQI information
     for Mumbai monitoring station locations.
     """
 
     try:
 
-        data = await get_current_mumbai_pollution()
+        data = get_current_mumbai_pollution()
 
         return {
-            "source": "Google Air Quality API",
+            "source": "Neon PostgreSQL Database",
             "count": len(data),
             "stations": data
         }
