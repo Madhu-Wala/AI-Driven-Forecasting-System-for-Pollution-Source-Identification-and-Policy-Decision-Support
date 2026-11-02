@@ -621,8 +621,8 @@ def analyse_station(
         "source_scores_display": source_scores_display,
 
         "source_signal_labels": source_signal_labels,
-        #"weather_context": weather_context,
-        "weather_context": None,
+        "weather_context": weather_context,
+        #"weather_context": None,
 
         "data_coverage": coverage,
 
