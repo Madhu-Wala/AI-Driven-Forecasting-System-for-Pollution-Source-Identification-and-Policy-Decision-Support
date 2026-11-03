@@ -15,3 +15,17 @@ export const getSourceAnalysis = () => request('/api/source-identification/')
 
 export const getStationAnalytics = (stationId) =>
   request(`/api/analytics/history/${encodeURIComponent(stationId)}`)
+
+export const getPolicyRagStatus = () => request('/api/policy/rag/status')
+
+export const getPolicyStationEvidence = (stationId, k = 5) =>
+  request(`/api/policy/rag/station/${encodeURIComponent(stationId)}?k=${k}`, { method: 'POST' })
+
+export const generatePolicyRecommendations = (stationId, k = 5) =>
+  request(`/api/policy/rag/station/${encodeURIComponent(stationId)}/recommendations?k=${k}`, { method: 'POST' })
+
+export const searchPolicyEvidence = (query, k = 5) =>
+  request('/api/policy/rag/retrieve', {
+    method: 'POST',
+    body: JSON.stringify({ query, k }),
+  })
