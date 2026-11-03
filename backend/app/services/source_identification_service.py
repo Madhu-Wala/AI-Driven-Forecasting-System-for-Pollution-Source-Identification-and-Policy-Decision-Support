@@ -609,6 +609,8 @@ def analyse_station(
         "latitude": safe_float(current_record["latitude"]),
         "longitude": safe_float(current_record["longitude"]),
         "timestamp": current_record["timestamp"].isoformat(),
+        "aqi": current_record.get("aqi"),
+        "aqi_category": current_record.get("aqi_category"),
 
         "current_pollutants": current_pollutants,
 
