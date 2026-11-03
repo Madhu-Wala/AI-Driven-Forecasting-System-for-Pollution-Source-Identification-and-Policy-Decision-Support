@@ -1,5 +1,8 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { AuthProvider } from './auth/AuthProvider'
 import Navbar from './components/Navbar'
+import ProtectedRoute from './components/ProtectedRoute'
+import AdminLogin from './pages/AdminLogin'
 import Dashboard from './pages/Dashboard'
 import AQI from './pages/AQI'
 import Health from './pages/Health'
@@ -9,7 +12,7 @@ import PolicyInsights from './pages/policy/PolicyInsights'
 import PolicyReports from './pages/policy/PolicyReports'
 
 function App() {
-  return <BrowserRouter><Navbar /><main className="app-shell"><Routes><Route path="/dashboard" element={<Dashboard />} /><Route path="/aqi" element={<AQI />} /><Route path="/health" element={<Health />} /><Route path="/policy" element={<Navigate to="/policy/overview" replace />} /><Route path="/policy/overview" element={<PolicyOverview />} /><Route path="/policy/source-analysis" element={<SourceAnalysis />} /><Route path="/policy/insights" element={<PolicyInsights />} /><Route path="/policy/reports" element={<PolicyReports />} /><Route path="*" element={<Navigate to="/dashboard" replace />} /></Routes></main></BrowserRouter>
+  return <BrowserRouter><AuthProvider><Navbar /><main className="app-shell"><Routes><Route path="/dashboard" element={<Dashboard />} /><Route path="/aqi" element={<AQI />} /><Route path="/health" element={<Health />} /><Route path="/admin/login" element={<AdminLogin />} /><Route path="/policy" element={<Navigate to="/policy/overview" replace />} /><Route path="/policy/overview" element={<ProtectedRoute><PolicyOverview /></ProtectedRoute>} /><Route path="/policy/source-analysis" element={<ProtectedRoute><SourceAnalysis /></ProtectedRoute>} /><Route path="/policy/insights" element={<ProtectedRoute><PolicyInsights /></ProtectedRoute>} /><Route path="/policy/reports" element={<ProtectedRoute><PolicyReports /></ProtectedRoute>} /><Route path="*" element={<Navigate to="/dashboard" replace />} /></Routes></main></AuthProvider></BrowserRouter>
 }
 
 export default App
