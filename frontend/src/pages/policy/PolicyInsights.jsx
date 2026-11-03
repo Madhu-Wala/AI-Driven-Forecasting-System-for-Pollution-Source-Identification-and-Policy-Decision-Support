@@ -8,20 +8,9 @@ import {
   getPolicyRagStatus,
   getPolicyStationEvidence,
   getPolicyStations,
-  searchPolicyEvidence,
 } from '../../services/policyService'
 
 const defaultSelection = { stationId: '', search: '' }
-
-function EvidenceText({ text, expanded, onToggle }) {
-  const content = displayValue(text, 'No evidence excerpt available')
-  const showToggle = content.length > 260
-
-  return <>
-    <p className={`policy-evidence-text ${expanded ? 'expanded' : ''}`}>{content}</p>
-    {showToggle && <button className="evidence-toggle" type="button" onClick={onToggle}>{expanded ? 'Show less' : 'Read more'}</button>}
-  </>
-}
 
 function displayValue(value, fallback = 'Unavailable') {
   if (value === null || value === undefined || value === '') {
@@ -33,20 +22,6 @@ function displayValue(value, fallback = 'Unavailable') {
   }
 
   return String(value)
-}
-
-function formatTimestamp(value) {
-  if (!value) {
-    return 'Unavailable'
-  }
-
-  const date = new Date(value)
-
-  if (Number.isNaN(date.getTime())) {
-    return displayValue(value)
-  }
-
-  return date.toLocaleString()
 }
 
 function mapAssessmentToScores(sourceAssessment = []) {
@@ -113,8 +88,6 @@ export default function PolicyInsights() {
   const [selection, setSelection] = useState(defaultSelection)
   const [stationEvidence, setStationEvidence] = useState({ data: null, loading: false, error: '' })
   const [recommendations, setRecommendations] = useState({ data: null, loading: false, error: '' })
-  const [searchState, setSearchState] = useState({ query: '', data: null, loading: false, error: '' })
-  const [expandedEvidence, setExpandedEvidence] = useState({})
 
   const loadStations = useCallback(async () => {
     setStationState((previous) => ({ ...previous, loading: true, error: '' }))
@@ -292,31 +265,7 @@ export default function PolicyInsights() {
     return {}
   }, [recommendations.data, stationEvidence.data])
 
-  const evidenceCards = useMemo(() => {
-    const evidence = [
-      ...(stationEvidence.data?.evidence || []),
-      ...(recommendations.data?.policy_response?.evidence || []),
-    ]
-
-    const unique = new Map()
-
-    evidence.forEach((item, index) => {
-      const id = item?.evidence_id || item?.source || item?.file_name || item?.category || `evidence-${index}`
-      if (!unique.has(id)) {
-        unique.set(id, item)
-      }
-    })
-
-    return Array.from(unique.values())
-  }, [recommendations.data, stationEvidence.data])
-
   const policyRecommendations = recommendations.data?.policy_response?.recommendations || []
-  const limitations = recommendations.data?.policy_response?.limitations || [
-    'Recommendations are evidence-informed suggestions, not guaranteed outcomes.',
-    'Source scores are heuristic indicators, not confirmed emission contribution percentages.',
-    'Quantitative intervention impact estimates may not be available for every recommendation.',
-    'Some responsible authorities may require verification before action is taken.',
-  ]
 
   const stationPollutants = stationEvidence.data?.station_data?.current_pollutants || {}
   const pollutantCards = [
@@ -349,35 +298,6 @@ export default function PolicyInsights() {
       setRecommendations({ data: null, loading: false, error: error.message || 'Unable to generate policy recommendations.' })
     }
   }, [selection.stationId])
-
-  const handleSearchSubmit = useCallback(async (event) => {
-    event.preventDefault()
-
-    const query = searchState.query.trim()
-
-    if (!query) {
-      setSearchState((current) => ({ ...current, error: 'Enter a policy question or policy topic to search.' }))
-      return
-    }
-
-    setSearchState({ query, data: null, loading: true, error: '' })
-
-    try {
-      const response = await searchPolicyEvidence(query, 5)
-      setSearchState({ query, data: response, loading: false, error: '' })
-    } catch (error) {
-      setSearchState({ query, data: null, loading: false, error: error.message || 'Unable to search policy documents.' })
-    }
-  }, [searchState.query])
-
-  const searchResults = searchState.data?.evidence || []
-
-  const toggleEvidenceExpansion = useCallback((key) => {
-    setExpandedEvidence((current) => ({
-      ...current,
-      [key]: !current[key],
-    }))
-  }, [])
 
   return <>
     <div className="page-intro">
@@ -420,10 +340,6 @@ export default function PolicyInsights() {
             <div className="station-detail-card compact">
               <span className="eyebrow">AQI category</span>
               <strong>{displayValue(stationSummary.aqi_category || selectedStation?.aqi_category, 'Unavailable')}</strong>
-            </div>
-            <div className="station-detail-card compact">
-              <span className="eyebrow">Latest timestamp</span>
-              <strong>{formatTimestamp(stationSummary.timestamp || selectedStation?.timestamp)}</strong>
             </div>
           </div>
         </div>
@@ -568,110 +484,6 @@ export default function PolicyInsights() {
       })}
     </div>
 
-    <div className="page-section-heading">
-      <div>
-        <span className="eyebrow">Government evidence</span>
-        <h2>Supporting government evidence</h2>
-      </div>
-    </div>
-
-    {evidenceCards.length ? (
-      <div className="policy-evidence-grid">
-        {evidenceCards.map((item, index) => {
-          const evidenceId = item?.evidence_id || `Evidence ${index + 1}`
-          const category = displayValue(item?.category, 'Unknown category')
-          const source = displayValue(item?.source, 'Source path unavailable')
-          const excerpt = displayValue(item?.evidence || item?.excerpt || item?.content, 'Excerpt unavailable')
-          const evidenceKey = `${evidenceId}-${index}`
-          const isExpanded = Boolean(expandedEvidence[evidenceKey])
-
-          return <article className="card policy-evidence-card" key={evidenceKey}>
-            <span className="eyebrow">Evidence ID</span>
-            <h3>{evidenceId}</h3>
-            <div className="policy-evidence-meta">
-              <span><strong>File:</strong> {displayValue(item?.file_name, 'Unknown file')}</span>
-              <span><strong>Category:</strong> {category}</span>
-              <span><strong>Source:</strong> {source}</span>
-            </div>
-            <EvidenceText text={excerpt} expanded={isExpanded} onToggle={() => toggleEvidenceExpansion(evidenceKey)} />
-          </article>
-        })}
-      </div>
-    ) : (
-      <div className="card empty-result">
-        <h3>No evidence linked to the current selection.</h3>
-        <p className="muted">Retrieve station evidence or generate recommendations to view relevant authority documents.</p>
-      </div>
-    )}
-
-    <section className="card policy-search-container">
-      <div className="section-heading">
-        <div>
-          <span className="eyebrow">Search documents</span>
-          <h2>Search Policy Documents</h2>
-        </div>
-      </div>
-
-      <form className="policy-search-form" onSubmit={handleSearchSubmit}>
-        <input
-          type="text"
-          value={searchState.query}
-          onChange={(event) => setSearchState((current) => ({ ...current, query: event.target.value, error: '' }))}
-          placeholder="Ask about GRAP actions, pollution control measures, authorities or standards..."
-          aria-label="Policy search query"
-        />
-        <button className="button button-primary" type="submit" disabled={searchState.loading}>
-          {searchState.loading ? 'Searching…' : 'Search'}
-        </button>
-      </form>
-
-      {searchState.error && <ErrorState message={searchState.error} onRetry={() => handleSearchSubmit({ preventDefault: () => {} })} />}
-
-      {searchState.data && (
-        <div className="search-summary">
-          <strong>{searchState.data.total_results ?? 0}</strong>
-          <span>total results</span>
-        </div>
-      )}
-
-      {searchState.loading && <LoadingState label="Searching policy documents…" />}
-
-      {searchState.data && !searchState.loading && searchResults.length === 0 && (
-        <div className="card empty-result">
-          <h3>No results found.</h3>
-          <p className="muted">Try a broader query or a different policy topic.</p>
-        </div>
-      )}
-
-      {searchResults.length > 0 && (
-        <div className="policy-evidence-grid">
-          {searchResults.map((item, index) => {
-            const evidenceKey = `${item?.evidence_id || 'search-result'}-${index}`
-            const isExpanded = Boolean(expandedEvidence[evidenceKey])
-            const excerpt = displayValue(item?.evidence || item?.excerpt || item?.content, 'No evidence excerpt available')
-
-            return <article className="card policy-evidence-card" key={evidenceKey}>
-              <span className="eyebrow">Evidence</span>
-              <h3>{displayValue(item?.file_name, 'Unknown file')}</h3>
-              <div className="policy-evidence-meta">
-                <span><strong>Category:</strong> {displayValue(item?.category, 'Unknown category')}</span>
-                <span><strong>Source:</strong> {displayValue(item?.source, 'Source path unavailable')}</span>
-              </div>
-              <EvidenceText text={excerpt} expanded={isExpanded} onToggle={() => toggleEvidenceExpansion(evidenceKey)} />
-            </article>
-          })}
-        </div>
-      )}
-    </section>
-
-    <details className="card policy-limitations" open>
-      <summary>Important limitations</summary>
-      <ul>
-        {limitations.map((limitation, index) => (
-          <li key={`${limitation}-${index}`}>{displayValue(limitation, 'No limitation information was returned.')}</li>
-        ))}
-      </ul>
-    </details>
   </>
 }
 
