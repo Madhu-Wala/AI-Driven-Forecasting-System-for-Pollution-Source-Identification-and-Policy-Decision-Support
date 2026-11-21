@@ -11,20 +11,31 @@ from app.api.source_identification import router as source_identification_router
 from app.api.analytics import router as analytics_router
 from app.api.hotspots import router as hotspots_router
 from app.api.policy import router as policy_router
+from app.api.auth import router as auth_router
+from fastapi.middleware.cors import CORSMiddleware
 
 app=FastAPI(
     title="AI-Driven Forecasting System for Pollution Source Identification and Policy Decision Support",
     description="Backend APIs for AQI Monitoring, Forecasting, Source Attribution and Policy Recommendation",
     version="1.0.0"
 )
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(health_router)
 app.include_router(station_router) 
 app.include_router(pollution_router)
 app.include_router(weather_router)
 app.include_router(prediction_router) # Old
 app.include_router(air_quality_router) # prediction
-#app.include_router(shap_router)
 app.include_router(advisory_router)
 app.include_router(source_identification_router)
 app.include_router(analytics_router)

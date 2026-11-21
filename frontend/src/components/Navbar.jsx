@@ -23,8 +23,8 @@ export default function Navbar() {
     </nav>
     <div className="mode-switch" aria-label="Application mode">
       <NavLink to="/dashboard" className={!isPolicyRoute ? 'mode-active' : ''}>Citizen</NavLink>
-      <NavLink to={isAuthenticated ? '/policy/overview' : '/admin/login'} className={isPolicyRoute ? 'mode-active' : ''}>Policy Maker</NavLink>
+      <NavLink to={isAuthenticated ? '/policy/overview' : '/policy/login'} className={isPolicyRoute ? 'mode-active' : ''}>Policy Maker</NavLink>
     </div>
-    {isAuthenticated && <div className="admin-session"><span className="admin-indicator" aria-hidden="true">A</span><span className="admin-label">Administrator</span><button type="button" className="logout-button" onClick={() => { logout(); navigate('/admin/login', { replace: true }) }}>Logout</button></div>}
+    {isAuthenticated && <div className="admin-session"><span className="admin-indicator" aria-hidden="true">A</span><span className="admin-label">Administrator</span><button type="button" className="logout-button" onClick={() => { logout(); navigate('/policy/login', { replace: true }) }}>Logout</button></div>}
   </header>
 }

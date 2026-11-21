@@ -1,45 +1,77 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { restoreSession, signIn, signOut } from './authService'
-import { AuthContext } from './authContext'
 
-export function AuthProvider({ children }) {
-  const [state, setState] = useState({ status: 'loading', user: null, error: '' })
+import { useCallback, useEffect, useState } from 'react'
+import { AuthContext } from './authContext'
+import {
+  restoreSession,
+  signIn,
+  signOut,
+} from './authService'
+
+export default function AuthProvider({ children }) {
+  const [user, setUser] = useState(null)
+  const [status, setStatus] = useState('loading')
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     let active = true
-    restoreSession()
-      .then((user) => {
-        if (active) setState({ status: user ? 'authenticated' : 'unauthenticated', user, error: '' })
-      })
-      .catch(() => {
-        if (active) setState({ status: 'unauthenticated', user: null, error: 'Your administrator session could not be restored.' })
-      })
-    return () => { active = false }
-  }, [])
 
-  const login = useCallback(async (credentials) => {
-    setState((current) => ({ ...current, status: 'loading', error: '' }))
-    try {
-      const user = await signIn(credentials)
-      setState({ status: 'authenticated', user, error: '' })
-      return user
-    } catch (error) {
-      setState({ status: 'unauthenticated', user: null, error: error instanceof Error ? error.message : 'Authentication failed.' })
-      throw error
+    async function checkSession() {
+      const currentUser = await restoreSession()
+
+      if (!active) return
+
+      setUser(currentUser)
+      setStatus(currentUser ? 'authenticated' : 'unauthenticated')
+    }
+
+    checkSession()
+
+    return () => {
+      active = false
     }
   }, [])
 
-  const logout = useCallback(async () => {
-    await signOut()
-    setState({ status: 'unauthenticated', user: null, error: '' })
+  const login = useCallback(async (identifier, password) => {
+    setError(null)
+
+    try {
+      const loggedInUser = await signIn(identifier, password)
+
+      // Verify the logged-in account is a Policy Maker.
+      if (loggedInUser?.role !== 'policy_maker') {
+        signOut()
+        throw new Error('This account is not authorized for the Policy Maker dashboard.')
+      }
+
+      setUser(loggedInUser)
+      setStatus('authenticated')
+
+      return loggedInUser
+    } catch (err) {
+      setError(err.message)
+      throw err
+    }
   }, [])
 
-  const value = useMemo(() => ({
-    ...state,
-    isAuthenticated: state.status === 'authenticated' && Boolean(state.user),
+  const logout = useCallback(() => {
+    signOut()
+    setUser(null)
+    setError(null)
+    setStatus('unauthenticated')
+  }, [])
+
+  const value = {
+    user,
+    status,
+    error,
     login,
     logout,
-  }), [login, logout, state])
+    isAuthenticated: status === 'authenticated',
+  }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  )
 }

@@ -6,14 +6,14 @@ from app.services.aqi_service import classify_aqi
 from app.services.personalization_service import generate_personalized_risk
 from app.rag.advisory_retriever import retrieve_advisory_evidence
 from app.services.advisory_llm_service import generate_llm_advisory
-
+from app.auth.dependencies import require_policy_maker
+from fastapi import Depends
 from app.services.advisory_validator import validate_advisory
 
 
 router = APIRouter(
     prefix="/api/advisory",
-    tags=["Personalized Health Advisory"]
-)
+    tags=["Personalized Health Advisory"])
 
 
 @router.post("/")

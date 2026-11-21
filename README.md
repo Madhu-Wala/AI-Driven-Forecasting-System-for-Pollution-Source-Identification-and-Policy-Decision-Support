@@ -1,463 +1,852 @@
-# AI-Driven Forecasting System for Pollution Source Identification and Policy Decision Support — Mumbai
 
-This repository contains an academic prototype for location-based air-quality monitoring, AQI forecasting, pollution-signal analysis and citizen health guidance in Mumbai. It combines a FastAPI backend, a React/Vite citizen interface, model artifacts, datasets, a PostgreSQL-backed station history and a citizen health-advisory retrieval-augmented generation (RAG) pipeline.
+# VayuSuchak
+## AI-Driven Pollution Source Identification, Forecasting & Policy Decision Support Dashboard for Mumbai
 
-The project is intended to support air-quality awareness and future policy analysis. It is not a medical diagnostic system, a regulatory monitoring replacement or a validated source-apportionment instrument.
+<p align="center">
+  An AI-powered air quality intelligence platform for monitoring pollution,
+  forecasting future AQI levels, identifying potential pollution sources,
+  and supporting informed environmental decision-making.
+</p>
 
-## What is implemented
+---
 
-| Area | Current implementation |
+## Project Documentation & Presentation
+
+| Resource | Link |
 |---|---|
-| Current AQI | Google Air Quality API lookup for a coordinate, including an India CPCB AQI index and pollutant concentrations when returned by the provider |
-| Weather | Daily Open-Meteo forecast; an hourly Open-Meteo lookup is also used as context by source analysis |
-| AQI forecast | LightGBM inference using current Google AQI, forecast weather, coordinates and a nearest historical-station encoding |
-| Station view | Latest records from the PostgreSQL `public.air_quality_data` table, displayed as map markers |
-| Source signals | Per-station pollutant-anomaly heuristics for Transport, Road Dust and Industry; scores are not contribution percentages |
-| SHAP | A separate endpoint that explains predictions from a configured pollutant-input AQI model |
-| Citizen advisory | Profile-based deterministic risk logic wired to citizen-document retrieval, a Groq-hosted structured-output LLM and post-generation checks; the complete RAG experience remains under development |
-| Policy Maker interface | Not implemented. The current navigation label is a static placeholder |
+| Project Report | [Report](https://github.com/Madhu-Wala/AI-Driven-Forecasting-System-for-Pollution-Source-Identification-and-Policy-Decision-Support) |
+| Project Presentation (PPT) | [Presentation](https://docs.google.com/presentation/d/1dnhZrcr3A9o9wrczXguAogY0_UC04pUN/edit?usp=sharing&ouid=114725319132321397156&rtpof=true&sd=true) |
+| Project Demonstration Video | [Video](https://drive.google.com/drive/folders/1fL83CazwrLBA_vHcQ8pG5mo8Jhcf9czg) |
+| GitHub Repository | [Repository](https://github.com/Madhu-Wala/AI-Driven-Forecasting-System-for-Pollution-Source-Identification-and-Policy-Decision-Support) |
 
-The repository's model and data artifacts are not accompanied by verified production evaluation metrics in the active inference code. No accuracy or source-contribution claims are made here.
 
-## Project resources
+---
 
-- [Project synopsis](https://docs.google.com/document/d/126vY7JX1dDhDIRNmvFwCMQNKw8xch68hi0Tn8-m4uVY/edit?usp=sharing)
-- [Project presentation](https://www.canva.com/design/DAHBxDm6Ecg/Ym4Isx8m5O_caoRg3RJ43Q/view)
-- [Model training notebook](https://colab.research.google.com/drive/1vaZYHteHroeBNMU3cSMXqp8bHuHQ3qbQ?usp=sharing)
-- [Initial data gathering and cleaning notebook](https://colab.research.google.com/drive/1adm3dGW53Tu149zRZRNApYujPbeDzGGl?usp=sharing)
-- [Data integration notebook](https://colab.research.google.com/drive/1pswhyJXqqTAIymjcNxVoxVEbpnIsz5Vy?usp=sharing)
-- [Capstone Project 1 report](https://docs.google.com/document/d/1zrS_-rM8So3qkzWgc2cexOq9dOkRFsQP/edit?usp=sharing&ouid=109023031129947265733&rtpof=true&sd=true)
-- [Figma design](https://proud-clad-63688256.figma.site/)
-- [Research document](https://docs.google.com/document/d/1rDY83MBeAQXwieENVmpg2IYuJSEuRd1cJ1N1KzCjc08/edit?usp=sharing)
-- [IEEE conference paper template](https://www.overleaf.com/latex/templates/ieee-conference-template/grfzhhncsfqn.pdf)
+## 1. Project Overview
 
-## Goals and source categories
+VayuSuchak is an AI-driven air quality monitoring and decision-support platform developed with a focus on Mumbai. The system integrates air quality data, machine learning-based forecasting, research-guided pollution source identification, interactive visualizations, and Retrieval-Augmented Generation (RAG) to provide useful environmental insights to citizens and policymakers.
 
-The intended goals are to:
+Conventional air quality applications primarily display current AQI values and pollutant concentrations. However, understanding the reasons behind pollution levels, anticipating future changes, and translating environmental information into actionable decisions remain important challenges.
 
-- Monitor and communicate location-based air quality around Mumbai.
-- Forecast AQI using weather and current AQI inputs.
-- Surface locations with elevated pollution signals.
-- Explore pollutant patterns associated with the project's three source categories:
-  1. **Transport**
-  2. **Road Dust**
-  3. **Industry**
-- Provide evidence-informed, non-diagnostic citizen health guidance.
-- Build toward a policy decision-support interface for government authorities.
+VayuSuchak addresses these challenges through a unified platform that provides:
 
-The current source-analysis code calls these signal groups `traffic`, `road_dust_construction` and `industry`. The first corresponds to Transport; the second combines Road Dust/Construction indicators and is not a separate fourth source category. These heuristic indicators do not prove a specific emitter or quantify actual source contributions.
+- Real-time air quality monitoring using available air quality data sources.
+- Interactive visualization of monitoring stations and their pollution levels.
+- Machine learning-based AQI forecasting.
+- Research-guided identification of potential pollution source categories.
+- Historical air quality trends and hotspot analysis.
+- Citizen-oriented health advisories.
+- Policy-oriented insights and recommendations supported by a knowledge base.
 
-## Technology stack
+The platform provides two main interfaces:
 
-Versions below are those declared in the repository's dependency manifests. Python package pins are in `backend/requirements.txt`; frontend ranges are in `frontend/package.json`.
+**Citizen Portal:** Provides location-based air quality information, forecasts, pollutant details, trends, and health advisories.
 
-| Layer | Technologies found in the repository |
+**Policy Maker Portal:** Provides station-level pollution analysis, source identification results, policy insights, and evidence-supported recommendations. Access to policymaker authentication and protected operations is restricted to authorized users.
+
+VayuSuchak is designed as a decision-support system. Its outputs are intended to assist interpretation and planning rather than replace official environmental assessments or regulatory decisions.
+
+---
+
+## 2. Problem Statement
+
+Urban air pollution is influenced by several interacting factors, including vehicular emissions, industrial activities, construction, road dust, and changing environmental conditions.
+
+Although air quality monitoring data is available from different sources, citizens and decision-makers often lack a unified platform that combines current pollution information, future predictions, potential source identification, and practical recommendations.
+
+The absence of integrated analytical support makes it difficult to:
+
+- Understand current air quality conditions at specific locations.
+- Identify potential categories of pollution contributing to observed pollutant variations.
+- Anticipate future AQI changes.
+- Examine historical pollution patterns and station-level hotspots.
+- Provide accessible health guidance to citizens.
+- Support policymakers with organized environmental evidence.
+
+**Proposed Solution:**
+
+VayuSuchak integrates data processing, machine learning, geospatial visualization, research-guided source identification, and RAG-based advisory generation into a single platform for Mumbai's air quality monitoring and decision support.
+
+---
+
+## 3. Project Objectives
+
+1. Develop a centralized platform for monitoring air quality across selected Mumbai monitoring stations.
+2. Display current AQI and individual pollutant concentrations through an interactive dashboard.
+3. Develop a machine learning model to forecast future AQI levels.
+4. Identify potential pollution source categories using station-specific pollutant behaviour and historical baselines.
+5. Visualize historical air quality patterns, trends, and pollution hotspots.
+6. Provide location-based health advisories for citizens.
+7. Provide policymakers with relevant environmental evidence and policy-oriented recommendations.
+8. Integrate multiple data sources and analytical modules into a scalable full-stack application.
+
+---
+
+## 4. Key Features
+
+### 4.1 Citizen Portal
+
+- Location-based air quality information using device geolocation.
+- Current AQI and associated air quality category.
+- Individual pollutant information, including PM2.5, PM10, NO2, SO2, CO, and O3, where available.
+- Interactive monitoring station map.
+- AQI forecasting using the trained machine learning model.
+- Historical air quality trends.
+- Weather information associated with the selected location.
+- RAG-based health advisories and pollution-related guidance.
+
+### 4.2 Policy Maker Portal
+
+- Protected policymaker login and registration.
+- Monitoring station selection.
+- Station-wise source identification analysis.
+- Potential pollution category indicators.
+- Pollutant anomaly analysis.
+- Historical pollution behaviour.
+- Policy-related information retrieval.
+- Evidence-supported recommendations and insights.
+
+### 4.3 Air Quality Monitoring
+
+- Integration of available air quality data sources.
+- Storage of historical monitoring records in PostgreSQL.
+- Monitoring station-wise AQI and pollutant information.
+- Interactive geographical visualization.
+- Retrieval of the latest available station readings.
+
+### 4.4 AQI Forecasting
+
+- Trained LightGBM regression model.
+- Historical AQI and pollutant information used as model inputs.
+- Time-based and environmental input features.
+- Forecast generation for the supported prediction horizon.
+- Comparison of predicted values with historical observations.
+
+### 4.5 Pollution Source Identification
+
+The system uses a research-guided heuristic methodology to identify potential pollution source categories.
+
+The analysis considers pollutant-specific behaviour and deviations from historical station-level baselines.
+
+The source categories considered include:
+
+- Traffic / Transportation
+- Road Dust
+- Construction
+- Industrial Emissions
+
+The methodology provides relative anomaly-based indicators. It does not claim to calculate exact source-wise emission contribution percentages.
+
+### 4.6 RAG-Based Advisory and Policy Support
+
+Retrieval-Augmented Generation is used to retrieve relevant information from a prepared knowledge base before generating contextual responses.
+
+The platform includes two application-oriented uses:
+
+- **Citizen Health Advisory:** Provides health-related guidance based on air quality conditions and retrieved reference information.
+- **Policy Decision Support:** Retrieves relevant policy documents, standards, environmental information, and recommendations to assist policymakers.
+
+---
+
+## 5. System Architecture
+
+The platform follows a modular full-stack architecture consisting of the frontend, backend, database, machine learning components, external data sources, and knowledge retrieval modules.
+
+### High-Level Architecture
+
+```text
+                  EXTERNAL DATA SOURCES
+                           |
+          +----------------+----------------+
+          |                |                |
+      Air Quality        Weather        Reference &
+        Data              Data          Policy Data
+          |                |                |
+          +----------------+----------------+
+                           |
+                           v
+                 DATA INGESTION LAYER
+                           |
+                           v
+                  FASTAPI BACKEND
+                           |
+          +----------------+----------------+
+          |                |                |
+          v                v                v
+     PostgreSQL       ML FORECASTING     SOURCE
+       (Neon)           MODULE          IDENTIFICATION
+          |                |                |
+          +----------------+----------------+
+                           |
+                           v
+                   ANALYTICAL SERVICES
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+        HEALTH ADVISORY             POLICY RAG
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                    REACT FRONTEND
+                           |
+              +------------+------------+
+              |                         |
+              v                         v
+         CITIZEN PORTAL           POLICY MAKER
+                                      PORTAL
+```
+
+### Architecture Components
+
+| Component | Responsibility |
 |---|---|
-| Frontend | React `^19.2.8`, React DOM `^19.2.8`, React Router `^7.18.3`, Vite `^8.2.2`, Tailwind CSS `^4.3.3`, `@tailwindcss/vite` `^4.3.3`, ESLint `^10.9.0` |
-| Mapping | Leaflet `^1.9.4`, React Leaflet `^5.0.0`, OpenStreetMap tile URLs |
-| Backend/API | Python 3.11 in the scheduled workflow; FastAPI `0.140.0`, Uvicorn `0.51.0`, Pydantic `2.13.4` |
-| ML and data processing | LightGBM `4.7.0`, XGBoost `3.2.0`, scikit-learn `1.9.0`, SHAP `0.51.0`, joblib `1.5.3`, pandas `3.0.5`, NumPy `2.2.6` |
-| RAG and LLM | LangChain Core `1.7.2`, Community `0.4.2`, Hugging Face integration `1.2.3`, Groq integration `1.1.3`; Groq serves the configured `openai/gpt-oss-120b` model |
-| Embeddings/vector store | `sentence-transformers/all-MiniLM-L6-v2`, Hugging Face sentence-transformers `6.2.0`, FAISS CPU `1.15.1` |
-| External data providers | Google Air Quality API, Open-Meteo forecast/archive APIs; WAQI and data.gov.in/CPCB provider modules exist but are not wired into the registered routes described below |
-| Storage | PostgreSQL via `psycopg2` `2.9.13`; the service code refers to a Neon-hosted PostgreSQL database. CSV and pickle/joblib files are also used |
-| Other backend libraries | `httpx` `0.28.1`, `requests` `2.34.2`, `python-dotenv` `1.2.2`, `haversine` `2.9.0` |
+| React Frontend | User interface, dashboards, maps, charts, and interaction |
+| FastAPI Backend | API endpoints, business logic, and integration of services |
+| Neon PostgreSQL | Storage of air quality monitoring records and application data |
+| Data Ingestion | Collection and storage of air quality information |
+| Forecasting Module | AQI prediction using the trained LightGBM model |
+| Source Identification | Research-guided pollutant anomaly and source-category analysis |
+| RAG Module | Retrieval of relevant health and policy information |
+| Authentication | Authentication and access control for policymakers |
 
-No charting library is declared or used by the current pages. AQI and weather values are presented as cards/lists, and stations are shown on a Leaflet map.
+---
 
-## Repository layout
+## 6. Technology Stack
 
-```text
-.
-├── backend/
-│   ├── app/
-│   │   ├── api/                 # FastAPI route modules registered by main.py
-│   │   ├── database/            # PostgreSQL connection helper
-│   │   ├── models/              # Pydantic advisory request/response schemas
-│   │   ├── rag/                 # Citizen document loading, FAISS retrieval and evidence helpers
-│   │   ├── services/            # AQI, weather, prediction, source, advisory and data-provider logic
-│   │   └── utils/               # Cache and station-coordinate mapping
-│   ├── scripts/                 # Air-quality history ingestion
-│   ├── build_rag.py             # Citizen FAISS-index build entry point
-│   ├── requirements.txt         # Pinned Python dependencies
-│   └── test_*.py                # Standalone diagnostic/retrieval scripts
-├── frontend/
-│   ├── public/                  # Vite public assets
-│   └── src/
-│       ├── components/          # AQI, pollutant, forecast, map and advisory UI
-│       ├── hooks/               # API-backed page state
-│       ├── pages/               # Dashboard, AQI and Health routes
-│       ├── services/            # HTTP wrappers for backend endpoints
-│       └── utils/               # Default coordinates and AQI/profile options
-├── Knowledge_Base_RAG/
-│   ├── citizen/                 # AQI, health advisory and health-impact Markdown
-│   │   └── vector_store/        # Checked-in FAISS index and pickle metadata
-│   └── authority/               # GRAP, mitigation, policy framework and standards Markdown
-├── Models/                      # AQI and pollutant-related pickle model artifacts
-├── data/
-│   ├── Dataset_raw/             # Source air-quality CSVs
-│   ├── cleaned/                 # Cleaned station CSVs
-│   ├── final/                   # Consolidated dataset exports
-│   ├── integrated with weather/ # Integrated air-quality/weather data
-│   ├── Model_Dataset/           # AQI prediction and pollutant/SHAP datasets
-│   └── stations/                # Station coordinates and encoded IDs
-├── docs/                        # Capstone report and synopsis PDFs
-└── .github/workflows/           # Scheduled hourly AQI ingestion workflow
-```
-
-### Important files
-
-| File | Purpose |
+| Layer | Technologies |
 |---|---|
-| `backend/app/main.py` | Creates the FastAPI application, registers all routers, and defines `GET /` |
-| `backend/app/api/*.py` | HTTP route definitions; route behavior is summarized in the API reference |
-| `backend/app/services/air_quality_service.py` | Calls the Google provider and parses its current AQI response |
-| `backend/app/services/prediction_service.py` | Loads the configured LightGBM artifact, assembles the 13 model features and returns daily forecasts |
-| `backend/app/services/source_identification_service.py` and `source_calculation.py` | Query recent station observations and calculate robust pollutant-anomaly signals |
-| `backend/app/services/personalization_service.py` | Deterministic AQI/profile risk and activity guidance |
-| `backend/app/services/advisory_llm_service.py` and `advisory_validator.py` | Build structured LLM output and apply post-generation safeguards |
-| `backend/app/services/providers/google_air_quality_provider.py` | Google current-conditions and forecast HTTP client; current-condition results are cached in memory |
-| `backend/app/services/providers/weather_provider.py` | Open-Meteo daily and hourly weather requests |
-| `backend/app/services/providers/waqi_provider.py`, `cpcb_provider.py` | Additional provider code not called by the active routes |
-| `backend/app/rag/` | Citizen Markdown loading, AQI-aware chunk construction, vector-store loading and evidence retrieval/ranking |
-| `backend/scripts/ingest_air_quality.py` | Fetches Google historical data for configured Mumbai-area coordinates and writes station records to PostgreSQL |
-| `backend/build_rag.py` | Rebuilds the citizen FAISS index from eligible Markdown files |
-| `frontend/src/App.jsx` | Registers the Dashboard, AQI and Health client routes |
-| `frontend/src/pages/` | The three implemented citizen pages |
-| `frontend/src/services/` | Browser-side wrappers for current AQI, station data, forecasts, weather and advisory requests |
-| `frontend/vite.config.js` | Local development proxy for `/api`, `/prediction` and `/weather` to `127.0.0.1:8000` |
-| `data/Model_Dataset/aqi_prediction_dataset.csv` | Historical station/weather/AQI data used for station mapping during inference |
-| `data/stations/stations.csv` | Station coordinate/encoding lookup |
-| `Models/` | Four checked-in model artifacts; only the configured artifacts loaded by services are used at runtime |
+| Frontend | React.js, JavaScript, HTML, CSS |
+| Backend | Python, FastAPI |
+| Database | PostgreSQL, Neon |
+| Machine Learning | LightGBM, Scikit-learn, Pandas, NumPy |
+| Data Processing | Python, Pandas, NumPy |
+| Geospatial Visualization | Interactive maps and station coordinates |
+| Data Sources | Google Air Quality API, Open-Meteo, and available reference datasets |
+| AI / Knowledge Retrieval | Retrieval-Augmented Generation (RAG), vector-based retrieval |
+| API Communication | REST APIs |
+| Version Control | Git and GitHub |
+| Automation | GitHub Actions |
 
-The checked-in model files are `Models/aqi_lightgbm_lag1.pkl`, `Models/aqi_xgb_lag1.pkl`, `Models/aqi_xgb_model.pkl` and `Models/pollutant_source_model.pkl`. The active prediction service loads a LightGBM artifact selected by `AQI_MODEL_PATH`; the two XGBoost files have no active service references. `pollutant_source_model.pkl` may be intended for the SHAP service, but its expected package structure has not been verified. `data/Model_Dataset/pollutant_shap_dataset.csv` is also present; no active endpoint reads it.
+---
 
-The raw, cleaned and consolidated data directories contain more files than shown in this summary. The full data rows and the contents of the report PDFs were not used to infer runtime behavior.
+## 7. Data Sources
 
-## Backend architecture and data providers
+The system integrates environmental information from multiple sources.
 
-`backend/app/main.py` registers these routers directly: health, station, pollution, weather, prediction, air quality, SHAP, advisory, source identification and analytics. There is no separate API router for policy recommendations.
-
-### Current air quality
-
-`GET /api/air-quality/current` calls `air_quality_service.get_current()`, which calls the Google Air Quality API current-conditions endpoint and parses the response. The request location is passed as latitude/longitude coordinates. The parser chooses the `ind_cpcb` index for `aqi`, category and dominant pollutant, and also returns the `uaqi` value when present. Its response is marked `model_based: true`; it is a coordinate-based provider result, not a direct reading from the project's station database.
-
-The returned pollutant map is based on pollutant codes in the Google response. The parser does not impose a fixed list; common codes include PM2.5, PM10, NO2, SO2, CO and O3, and can include other provider codes. Values reported in parts per billion are converted to micrograms per cubic metre only for codes with configured molecular weights. The response includes source, timestamp, region, AQI display/category/scale, dominant pollutant and pollutant values/units. No independent AQI-category calculation is applied to this endpoint.
-
-The Google current-condition provider caches responses in process memory for 15 minutes using coordinates rounded to three decimal places. There is no persistent cache or explicit fallback provider in this call path. The WAQI and data.gov.in/CPCB modules are present but are not imported by the active current-air-quality route.
-
-### Station records and ingestion
-
-`GET /api/pollution/current` reads the most recent record for each station ID from `public.air_quality_data` in PostgreSQL and returns station coordinates, AQI/category, pollutant values, timestamp, color and data source. The scheduled job in `.github/workflows/hourly-air-quality.yml` runs `backend/scripts/ingest_air_quality.py` hourly (cron minute 10 UTC) and can also be started manually. The script requests the previous three hours from Google's history endpoint at 20 hard-coded station coordinates, normalizes pollutant units, stores the records and removes records older than 31 days. It does not collect readings from a direct CPCB monitor feed.
-
-The table is expected to exist before ingestion or API use; no schema-creation/migration file was found in the inspected source. The 30-day analytics and source-analysis queries depend on this same table and database.
-
-### Weather
-
-The daily weather service calls Open-Meteo with the requested coordinates and `Asia/Kolkata` timezone. Available daily fields are maximum, minimum and mean temperature; mean relative humidity; maximum and mean wind speed; dominant wind direction; mean sea-level pressure; and precipitation sum. Missing provider values can be returned as `null`.
-
-The source-analysis path separately requests hourly temperature, relative humidity, precipitation, wind speed/direction and pressure for the observation hour. This hourly result is contextual prose, not a pollutant correction or source-attribution score. Source analysis reads station coordinates from a CSV; its default `STATION_MAPPING_PATH` is a machine-specific `E:\Capstone\...` path, so configure it to this repository's `data/stations/stations.csv` for local use.
-
-## AQI forecasting
-
-The registered `GET /prediction/forecast` route calls, in order:
-
-1. The current Google air-quality service for the supplied latitude/longitude.
-2. The daily Open-Meteo weather service for the requested forecast period.
-3. `prediction_service.predict_future_aqi()` for LightGBM inference.
-
-The service loads its model using `AQI_MODEL_PATH`; the active service is implemented as LightGBM inference. It uses `HISTORICAL_DATASET_PATH` to find the geographically nearest historical station and its `station_encoded` value. Historical AQI rows are not fed as a time series into this inference function. Instead, the current Google AQI is reused as `AQI_lag1` for every forecast day.
-
-The model input has these 13 features:
-
-```text
-temperature_2m_mean
-relative_humidity_2m_mean
-wind_speed_10m_mean
-wind_speed_10m_max
-wind_direction_10m_dominant
-pressure_msl_mean
-precipitation_sum
-month
-dayofyear
-latitude
-longitude
-station_encoded
-AQI_lag1
-```
-
-The endpoint accepts `forecast_days` from 1 through 7 (default 3). The forecast is a daily list of `{date, predicted_AQI}` records, together with current AQI, location and historical-station mapping details. Negative predictions are clipped to zero. Model performance metrics are not emitted by this service and are not asserted in this README.
-
-The repository also contains `aqi_xgb_lag1.pkl` and `aqi_xgb_model.pkl`; no active service reference to those files was found. The checked-in `aqi_lightgbm_lag1.pkl` is the candidate artifact for the active prediction service, but the service selects its model exclusively through `AQI_MODEL_PATH`.
-
-## Pollution source signals and explainability
-
-The source-identification routes query up to 30 days of station records from PostgreSQL. For each station, the service compares the latest observation with earlier records from the same year and month. A pollutant baseline is only calculated when at least 10 usable baseline samples exist. The service uses the median and median absolute deviation (MAD), converts the current deviation to a robust normalized score, clamps it to `[-1, 1]`, then averages relevant signals into the source groups:
-
-| Project category | Code key | Signals used |
-|---|---|---|
-| Transport | `traffic` | NO2 and CO anomalies |
-| Road Dust | `road_dust_construction` | PM10 and coarse-particle (`PM10 - PM2.5`, floored at zero) anomalies |
-| Industry | `industry` | SO2 anomaly |
-
-Unavailable or insufficient measurements produce missing scores. The API labels each score as above, below or around usual levels and includes data-coverage and baseline-sample information. It also optionally attaches same-hour weather context.
-
-These are **pollutant-anomaly heuristics**, not a trained sector-contribution model, chemical source apportionment, measured emission fractions or proof of a source. The code does not calculate sector contribution percentages. Station coordinates are returned, but there is no spatial hotspot clustering or sector-specific hotspot algorithm. The source-analysis endpoint is not currently consumed by the citizen frontend.
-
-`GET /shap/current` is a separate explainability path. It gets current pollutant concentrations from Google, feeds them to a configured saved model, and returns that model's predicted AQI plus per-feature SHAP values and direction. It explains the configured model's prediction; it does not explain Google’s returned AQI, nor does it attribute pollution to Transport, Road Dust or Industry. The service expects `SHAP_MODEL_PATH` to load a joblib package containing `model` and `features`. The checked-in `Models/pollutant_source_model.pkl` is a possible intended artifact, but its serialized structure was not loaded or verified during this documentation task.
-
-## Citizen health advisory
-
-The frontend form collects:
-
-- Age group: `18-30 years`, `31-50 years`, `51-65 years` or `65+ years`.
-- One or more health-condition options, or `None`: asthma, COPD/chronic lung condition, other respiratory condition, heart/cardiovascular condition, diabetes, allergies/sinusitis, pregnancy or other/not listed.
-- Activity level: Light, Moderate or Heavy Activity.
-- Browser-provided latitude and longitude after the user grants geolocation permission.
-
-`POST /api/advisory/` accepts an `AdvisoryRequest` with `age_group`, `health_conditions` (a list, default empty), `activity_level`, `latitude` and `longitude`. The route then:
-
-1. Fetches current Google AQI for the submitted location.
-2. Classifies AQI using the CPCB bands in `aqi_service.py`.
-3. Computes deterministic profile risk and an activity recommendation in `personalization_service.py`.
-4. Retrieves AQI/profile-relevant citizen documents from the FAISS index.
-5. Requests a structured advisory from Groq using `openai/gpt-oss-120b`.
-6. Applies deterministic post-generation checks and returns the result plus evidence metadata.
-
-The AQI classification bands are 0–50 Good, 51–100 Satisfactory, 101–200 Moderate, 201–300 Poor, 301–400 Very Poor and above 400 Severe. The deterministic personalization uses AQI, age group, conditions and activity level. The LLM supplies structured prose, but its prompt restricts it to the supplied profile, deterministic assessment and retrieved evidence; it prohibits diagnosis, prescriptions and unsupported recommendations. The validator overwrites the returned risk level with the deterministic value, removes certain medication-related recommendations, caps list lengths and supplies a disclaimer if absent. These safeguards are code checks, not a medical review or guarantee of factual correctness.
-
-The response contains `user_profile`, `location`, `air_quality`, `aqi_classification`, `personalized_risk`, `advisory` and an `evidence` array (source/category/topic/AQI bounds). `advisory` follows `AdvisoryResponse`: risk level, summary, today's recommendations, activity timing, outdoor exposure, protective measures, warning signs, evidence source filenames and disclaimer.
-
-This is general air-pollution guidance, not medical diagnosis or treatment. The browser currently requires at least one selected health-condition state (including the `None` choice), although the backend request model allows an empty list.
-
-## RAG pipeline — current status
-
-The citizen RAG path is wired into the advisory endpoint but remains under development. The active flow in `backend/app/rag/` is:
-
-1. `document_loader.py` reads Markdown under `Knowledge_Base_RAG/citizen/` and skips README files. Authority documents are not loaded by this loader.
-2. `vector_store.py` splits document text on lines and creates AQI-aware chunks; this is not a generic fixed-size/recursive text splitter.
-3. AQI range detection assigns `aqi_min`/`aqi_max`; keyword rules assign a `topic`. Source, category and filename metadata are carried forward.
-4. The builder embeds chunks with `sentence-transformers/all-MiniLM-L6-v2` and saves a LangChain FAISS store under `Knowledge_Base_RAG/citizen/vector_store/`.
-5. At request time, `retriever.py` loads the local FAISS store, performs similarity search with an expanded candidate count, retains general evidence and AQI-range-applicable evidence, and `evidence_ranker.py` ranks by AQI, health condition, activity and topic. The advisory retriever returns the top `k` documents (the API requests 3).
-6. The LLM service formats the retrieved documents into a prompt, requests strict structured output using the Pydantic response schema, and passes the result through the advisory validator.
-
-Citizen documents currently present are in `aqi_information/`, `health_advisories/` and `health_impacts/`. The `authority/` tree contains GRAP, mitigation, policy-framework and standards documents, but the current citizen loader does not include them. A checked-in `index.faiss` and `index.pkl` exist; whether those files are current with all source documents was not verified. The runtime loader uses `allow_dangerous_deserialization=True`, so only load a vector store you trust.
-
-`evidence_filter.py` and `evidence_selector.py` contain additional line/document filtering helpers, but they are not called in the active `retrieve_advisory_evidence()` → LLM route. The active pipeline uses semantic retrieval, AQI metadata filtering and heuristic ranking; the optional selector does not currently filter the LLM context. Output validation is limited to the explicit checks in `advisory_validator.py`.
-
-Backend `test_*.py` files are primarily direct-run retrieval/inspection scripts, not a configured automated test suite. Some scripts exercise the pipeline and print results; no model-quality or medical-safety benchmark is reported here.
-
-### Future Policy Maker RAG
-
-No policy RAG endpoint or policy recommendation service is registered. The authority Markdown corpus is present but is not loaded by the current citizen RAG pipeline. A future Policy Maker RAG pipeline is intended to retrieve relevant government and policy evidence, then provide traceable recommendations in context of AQI, the three project source categories, observed locations/hotspots and source documentation. That workflow must be implemented and validated before it is represented as an existing capability.
-
-## Frontend — Citizen interface
-
-The React app registers `/dashboard`, `/aqi` and `/health`. `Navbar.jsx` links these pages and shows a non-interactive “Policy Maker” label; there are no Policy Maker routes or screens.
-
-| Page | Current content and API use |
+| Data Source | Purpose |
 |---|---|
-| Dashboard | Requests current AQI and station records in parallel through `useAirQuality`, and requests a three-day AQI forecast through `usePrediction`. Shows AQI, pollutant cards, forecast rows and a Leaflet station map. |
-| AQI | Uses the same current AQI, station and forecast calls, and separately requests a two-day weather forecast. Displays AQI, pollutants, forecast rows, a small set of weather fields and the station map. |
-| Health | Collects profile selections, requests browser geolocation on submit, and posts to `/api/advisory/`. Displays the returned risk, summary, recommendations, activity/exposure guidance, protective measures, warning signs, evidence filenames and disclaimer. |
+| CPCB / MPCB | Air quality monitoring information and reference data |
+| Google Air Quality API | Location-based air quality information and historical data where supported |
+| Open-Meteo | Weather information such as temperature, humidity, and wind conditions |
+| Neon PostgreSQL | Storage of collected air quality records |
+| MPCB Source Apportionment Report | Research reference for pollution source categories |
+| Policy and Government Documents | Knowledge base for policy-related retrieval |
+| Health Reference Documents | Knowledge base for citizen health advisories |
 
-The default Dashboard/AQI coordinates are fixed at `19.076, 72.8777`; they are not obtained from the browser. The Health page uses device coordinates for its advisory. The map uses station records from PostgreSQL and OpenStreetMap tiles; its markers are distinct from the user-coordinate Google AQI result. The application currently contains no time-series charts.
+The availability, coverage, and update frequency of individual datasets depend on the corresponding data provider.
 
-The reusable components include `AQICard`, `PollutantCard`, `ForecastCard`, `WeatherImpact`, `MapCard`, `ProfileForm`, `AdvisoryResult`, `LoadingState`, `ErrorState` and `SectionHeader`. The map can be expanded/collapsed. Current AQI cards map the provider's `aqi`, `aqi_display`, category and dominant pollutant; forecast rows map `forecast[].predicted_AQI`; map markers map each station's coordinates and fields; the weather card displays selected fields from the first forecast day; and the advisory result maps the structured `advisory` fields and backend location/AQI.
+---
 
-The hooks show loading and error states; current AQI and forecast requests can be retried, while weather/advisory errors are displayed without a retry control. API errors are logged to the browser console and shown as generic user-facing messages. Several page labels describe data as “live” or station readings, but the code's ingestion path stores Google Air Quality API history at configured coordinates, and the station endpoint's `data_source` is the authoritative field for those records.
+## 8. Database Design
 
-## Policy Maker interface — development status
+The application uses PostgreSQL hosted on Neon for storing air quality monitoring data.
 
-The intended navigation is **Overview**, **Source Analysis**, **Policy Simulator** and **Reports**. None of those Policy Maker screens is implemented. The current “Policy Maker” navbar item is only static text.
+### Main Table: `air_quality_data`
 
-Backend functionality that a future interface could reuse includes current station records, AQI forecasting, per-station heuristic source signals and 30-day station analytics. The frontend does not currently call the source-identification or analytics routes. There is no implemented policy simulator, intervention-impact model, government-facing recommendation endpoint or authority-document RAG flow. Future recommendations should identify their supporting evidence and clearly separate heuristic signals from measured contributions.
+| Column | Description |
+|---|---|
+| id | Unique record identifier |
+| station_id | Monitoring station identifier |
+| station_name | Monitoring station name |
+| latitude | Station latitude |
+| longitude | Station longitude |
+| timestamp | Timestamp of the air quality record |
+| aqi | Air Quality Index |
+| aqi_category | AQI category |
+| pm25 | PM2.5 concentration |
+| pm10 | PM10 concentration |
+| no2 | Nitrogen dioxide concentration |
+| so2 | Sulphur dioxide concentration |
+| co | Carbon monoxide concentration |
+| o3 | Ozone concentration |
+| source | Data source |
+| created_at | Record insertion timestamp |
 
-## API reference
+The database supports historical retrieval, station-wise analysis, trend generation, and forecasting-related operations.
 
-All routers below are registered in `backend/app/main.py`. Query names and response fields are based on the route/service code, not inferred from UI mockups.
+Additional application tables are used for the corresponding authentication and application workflows.
 
-| Endpoint | Method | Inputs | Purpose / main response fields | Frontend consumer | Status |
-|---|---|---|---|---|---|
-| `/` | GET | None | Backend status message | None | Implemented |
-| `/health/` | GET | None | `status`, `message` | None | Implemented |
-| `/station/?lat=...&lon=...` | GET | Required latitude and longitude | Nearest CSV station: `station`, `station_encoded`, coordinates, `distance_km` | None | Implemented |
-| `/api/pollution/current` | GET | None | `source`, `count`, `stations[]`; latest database station fields include coordinates, timestamp, AQI/category, color, pollutants and `data_source` | Dashboard, AQI map | Implemented; requires PostgreSQL data |
-| `/weather/forecast?latitude=...&longitude=...&forecast_days=...` | GET | Coordinates required; days 1–10, default 2 | Coordinates, actual record count as `forecast_days`, `source`, `forecast[]` of date and daily weather fields | AQI page | Implemented |
-| `/prediction/forecast?latitude=...&longitude=...&forecast_days=...` | GET | Coordinates required; days 1–7, default 3 | Source label, current AQI/category/pollutants and forecast fields: `historical_station`, `station_encoded`, `mapping_distance_km`, `forecast[]` (`date`, `predicted_AQI`) | Dashboard, AQI | Implemented; requires configured model/data and provider access |
-| `/api/air-quality/current?lat=...&lon=...` | GET | Latitude -90..90 and longitude -180..180 | Parsed Google current AQI, category, dominant pollutant, universal AQI and pollutant map | Dashboard, AQI | Implemented; requires Google key |
-| `/shap/current?latitude=...&longitude=...` | GET | Coordinates required | Current AQI/provider fields and `shap_analysis` (`predicted_aqi`, pollutant `contributions[]`) | None | Implemented behind compatible configured model |
-| `/api/advisory/` | POST | JSON: `age_group`, `health_conditions[]`, `activity_level`, `latitude`, `longitude` | Profile, location, air quality, AQI classification, deterministic risk, structured advisory and retrieved evidence metadata | Health | Wired; RAG/LLM behavior remains under development and needs external keys/index |
-| `/api/source-identification/` | GET | None | `source`, `method`, `count`, per-station pollutant anomalies, heuristic source scores, coverage, weather context and status | None | Implemented heuristic; requires PostgreSQL |
-| `/api/source-identification/{station_id}` | GET | Path `station_id` (for example `station_0`) | One station result with the same fields as above; 404 if no station data | None | Implemented heuristic; requires PostgreSQL |
-| `/api/analytics/history/{station_id}` | GET | Path `station_id` | 30-day hourly series, station, period, timezone, record count, pollutants and `data[]` | None | Implemented; requires PostgreSQL |
+---
 
-Errors are raised as HTTP errors by the route handlers (including provider, database, model and advisory failures). Exact error status varies by endpoint; clients should not assume a successful response shape on failure.
+## 9. Machine Learning: AQI Forecasting
 
-## System data flows
+### 9.1 Objective
 
-### A. Citizen dashboard
+The forecasting module predicts future AQI values using historical air quality information and engineered input features.
+
+The purpose is to provide an indication of possible future air quality conditions rather than relying only on current readings.
+
+### 9.2 Dataset
+
+The forecasting work uses a historical air quality dataset containing approximately:
+
+- 33,799 observations.
+- 20 monitoring stations.
+- Historical records covering 26 June 2019 to 16 February 2026.
+
+The dataset undergoes preprocessing and preparation before model training.
+
+### 9.3 Data Preprocessing
+
+The major preprocessing operations include:
+
+1. Handling missing values.
+2. Removing or treating invalid and extreme observations.
+3. Preparing timestamp-based features.
+4. Organizing records chronologically.
+5. Preparing the input features required by the forecasting model.
+6. Splitting the dataset chronologically into training and testing sets.
+
+An 80:20 chronological split is used to preserve the time order of observations and avoid randomly mixing future records into the training data.
+
+### 9.4 Model Selection
+
+Different machine learning approaches were evaluated during model development.
+
+LightGBM was selected for the implemented forecasting module based on the model evaluation and comparison process.
+
+The final model uses a single AQI lag feature along with other engineered input features.
+
+### 9.5 Model Evaluation
+
+The final reported evaluation metrics are:
+
+| Metric | Value |
+|---|---:|
+| MAE | 7.4715 |
+| RMSE | 11.8617 |
+| R² Score | 0.9832 |
+
+**MAE (Mean Absolute Error):** Measures the average absolute difference between actual and predicted values.
+
+**RMSE (Root Mean Squared Error):** Measures prediction error while giving greater weight to larger errors.
+
+**R² Score:** Indicates how well the model explains variation in the target variable on the evaluation dataset.
+
+These results represent the model's performance on the prepared test dataset and should not be interpreted as a guarantee of future real-world accuracy.
+
+---
+
+## 10. Pollution Source Identification Methodology
+
+### 10.1 Objective
+
+The source identification module attempts to identify pollution categories that may be associated with unusual pollutant behaviour at a monitoring station.
+
+Instead of directly estimating source contribution percentages, the system compares current pollutant concentrations against historical station-specific behaviour.
+
+### 10.2 Methodology
+
+The system uses a rolling 30-day historical baseline for each monitoring station.
+
+For each pollutant indicator:
+
+1. Historical readings are retrieved for the selected station.
+2. The median concentration is calculated.
+3. The Median Absolute Deviation (MAD) is calculated.
+4. The current concentration is compared with the historical baseline.
+5. A normalized anomaly score is generated.
+6. Related pollutant indicators are grouped into source categories.
+
+### 10.3 Anomaly Calculation
+
+The normalized anomaly score is calculated using:
 
 ```text
-React Dashboard/AQI
-  ├─ GET /api/air-quality/current
-  │    └─ Google Air Quality API → parser/cache → current AQI and pollutants
-  └─ GET /api/pollution/current
-       └─ PostgreSQL air_quality_data → latest row per station → map markers
+Z = (C - M) / (1.4826 × MAD)
 ```
 
-The dashboard's AQI and station markers are separate data paths. A failure in either parallel request currently makes the combined `useAirQuality` request state show an error.
+Where:
 
-### B. AQI forecasting
+- C = Current pollutant concentration
+- M = Historical median concentration
+- MAD = Median Absolute Deviation
+- 1.4826 = Scaling constant used to make MAD comparable to standard deviation under a normal distribution
+
+The resulting score is clipped to the range -3 to +3 and normalized to obtain a signed indicator between -1 and +1.
 
 ```text
-React page → GET /prediction/forecast
-  → Google current AQI + Open-Meteo daily weather
-  → nearest station mapping from historical CSV
-  → LightGBM (13 features; current AQI reused as AQI_lag1)
-  → daily predicted_AQI records → forecast cards
+Normalized Score = clip(Z, -3, 3) / 3
 ```
 
-### C. Citizen personalized advisory
+### 10.4 Pollutant-to-Source Association
+
+| Source Category | Associated Indicators |
+|---|---|
+| Traffic / Transportation | NO2 and CO |
+| Road Dust | PM10 and coarse particulate fraction |
+| Construction | PM10 and coarse particulate fraction |
+| Industrial Emissions | SO2 |
+
+The coarse particulate fraction is estimated as:
 
 ```text
-Health form → browser coordinates/profile → POST /api/advisory/
-  → Google current AQI → CPCB AQI classification
-  → deterministic profile risk
-  → citizen FAISS retrieval + AQI filter + evidence ranking
-  → Groq structured output → validator → advisory + evidence metadata
+Coarse Fraction = max(0, PM10 - PM2.5)
 ```
 
-This path is present in code but depends on correct environment configuration, the checked-in/current vector store, network access and a Groq API key. It is not a medical diagnosis or treatment flow.
+Ozone (O3) is treated as contextual information rather than a direct indicator of a single emission source.
 
-### D. Future Policy Maker workflow — planned
+### 10.5 Score Interpretation
+
+| Score Behaviour | Interpretation |
+|---|---|
+| Positive score | Pollutant concentration is above its historical baseline |
+| Near-zero score | Pollutant concentration is close to its historical baseline |
+| Negative score | Pollutant concentration is below its historical baseline |
+
+The category-level score is derived from the available associated pollutant indicators.
+
+### 10.6 Research Basis
+
+The source categories and pollutant associations are guided by the *Final Report: Air Quality Assessment, Emission Inventory & Source Apportionment Study for Mumbai City* published by MPCB in December 2023.
+
+The research findings provide a reference for selecting relevant source categories and associated pollutants.
+
+### 10.7 Important Methodological Limitation
+
+The module is a research-guided heuristic source identification system, not a chemical source apportionment model.
+
+It does not use chemically speciated particulate samples or a receptor model such as Positive Matrix Factorization (PMF) to calculate exact source contribution percentages.
+
+Meteorological conditions such as wind speed, rainfall, humidity, and atmospheric mixing can also influence pollutant concentrations. The current 30-day median baseline does not fully remove these effects.
+
+Therefore, the displayed results should be interpreted as relative pollutant anomaly indicators and potential source associations, not definitive proof of emission sources or their exact contributions.
+
+---
+
+## 11. Retrieval-Augmented Generation (RAG)
+
+### 11.1 Overview
+
+Retrieval-Augmented Generation combines information retrieval with language-model-based response generation.
+
+Instead of generating responses only from the language model's existing knowledge, the system first retrieves relevant information from a prepared knowledge base.
+
+### 11.2 Citizen Health Advisory
+
+The citizen advisory module uses air quality information and retrieved health-related references to provide contextual guidance.
+
+The workflow is:
 
 ```text
-Existing AQI / forecast / source-signal / station-history APIs
-  → future Overview, Source Analysis, Policy Simulator and Reports UI
-  → future authority-document retrieval and evidence-backed recommendations
+Current Air Quality Information
+             |
+             v
+       Advisory Request
+             |
+             v
+     Knowledge Base Retrieval
+             |
+             v
+   Relevant Health Information
+             |
+             v
+       Response Generation
+             |
+             v
+      Citizen Health Advisory
 ```
 
-Only the existing APIs/data at the start of this flow are implemented. Policy screens, intervention simulation and policy RAG are planned, not current behavior.
+### 11.3 Policy Decision Support
 
-## Installation and local execution
+The policy RAG module retrieves relevant environmental and policy information to support decision-making.
 
-The backend's active service modules load model artifacts while the application imports. Configure the required paths and provider/database values before starting the API. The checked-in `backend/.env.example` is empty, so it does not provide a ready-to-copy configuration.
+The knowledge base contains relevant material such as:
 
-### Backend
+- Air quality standards and AQI information.
+- Government policy documents.
+- Pollution-control guidelines.
+- Mumbai-specific environmental information.
+- Health and environmental impact references.
+- Relevant recommendations and intervention information.
 
-From the repository root in PowerShell:
+The workflow is:
+
+```text
+Selected Monitoring Station
+             |
+             v
+     Source / AQI Analysis
+             |
+             v
+       Policy Query
+             |
+             v
+     Knowledge Base Retrieval
+             |
+             v
+   Relevant Policy Evidence
+             |
+             v
+   Policy Insight / Recommendation
+```
+
+RAG outputs are intended to assist users with relevant information. They should be reviewed before being treated as official policy decisions.
+
+---
+
+## 12. Project Workflow
+
+The overall working process of VayuSuchak is as follows:
+
+1. Air quality and environmental information is collected from available data sources.
+2. Data is processed and stored in the PostgreSQL database.
+3. The backend exposes APIs for accessing air quality information and analytical results.
+4. The React frontend retrieves and displays the required information.
+5. The forecasting module generates future AQI predictions.
+6. The source identification module compares pollutant readings against historical station-specific baselines.
+7. Historical trends and station information are displayed through charts and maps.
+8. The citizen portal retrieves relevant health information to generate advisories.
+9. The policymaker portal retrieves policy-related evidence and presents relevant insights.
+10. Users interact with the dashboard to understand air quality conditions and support informed decisions.
+
+---
+
+## 13. Installation and Setup
+
+### 13.1 Prerequisites
+
+Install the following software before running the project:
+
+- Python 3.12
+- Node.js and npm
+- Git
+- Visual Studio Code or another code editor
+- PostgreSQL database through Neon
+- Required API credentials
+
+### 13.2 Clone the Repository
+
+```bash
+git clone YOUR_GITHUB_REPOSITORY_URL
+cd YOUR_PROJECT_FOLDER
+```
+
+Replace the repository URL and folder name with the actual values.
+
+### 13.3 Backend Setup
+
+Open a terminal and navigate to the backend directory:
 
 ```powershell
 cd backend
-py -3.11 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
 ```
 
-Create a local `backend/.env` (do not commit credentials) and fill in real values:
+Create a Python virtual environment:
 
-```dotenv
-GOOGLE_AIR_QUALITY_API_KEY=replace-with-google-air-quality-key
-DATABASE_URL=postgresql://<username>:<password>@<hostname>:5432/<database>
-AQI_MODEL_PATH=..\Models\aqi_lightgbm_lag1.pkl
-HISTORICAL_DATASET_PATH=..\data\Model_Dataset\aqi_prediction_dataset.csv
-SHAP_MODEL_PATH=..\Models\pollutant_source_model.pkl
-STATION_MAPPING_PATH=..\data\stations\stations.csv
-GROQ_API_KEY=replace-with-groq-key
+```powershell
+python -m venv .venv
 ```
 
-Notes:
+Activate the environment:
 
-- `AQI_MODEL_PATH` and `SHAP_MODEL_PATH` are read during application import. The SHAP artifact must be a joblib package with the `model` and `features` entries expected by `shap_service.py`; verify that the selected artifact matches before relying on this endpoint.
-- `HISTORICAL_DATASET_PATH` is needed by AQI prediction and other historical-data service code.
-- `DATABASE_URL` must point to a PostgreSQL database with the expected `public.air_quality_data` table and records. No schema migration is included in the inspected source.
-- `STATION_MAPPING_PATH` should point to `data/stations/stations.csv`; the source-analysis default is a machine-specific path.
-- `GOOGLE_AIR_QUALITY_API_KEY` is required for current AQI, prediction and ingestion. `GROQ_API_KEY` is required when generating a citizen advisory.
-- `WAQI_TOKEN`, `DATA_GOV_API_KEY` and `RESOURCE_ID` are referenced by provider modules that are not wired to the registered active routes.
-- The repository declares Python dependencies, but does not declare a universal local Python version. The scheduled workflow uses Python 3.11.
+```powershell
+.venv\Scripts\activate
+```
 
-Start the backend from `backend/`:
+Install the backend dependencies:
+
+```powershell
+pip install -r requirements.txt
+```
+
+Configure the environment variables required by the backend.
+
+Create a `.env` file in the backend directory if that is where the application's configuration loader expects it.
+
+Example:
+
+```env
+DATABASE_URL=your_neon_postgresql_connection_string
+GOOGLE_AIR_QUALITY_API_KEY=your_google_air_quality_api_key
+```
+
+> Add any other environment variables required by the current backend configuration. Never commit API keys, database credentials, passwords, or invitation codes to GitHub.
+
+Start the FastAPI backend:
 
 ```powershell
 python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Backend: `http://127.0.0.1:8000`
+Backend URL:
 
-Swagger UI: `http://127.0.0.1:8000/docs`
+```text
+http://127.0.0.1:8000
+```
 
-### Frontend
+API documentation:
 
-In another terminal:
+```text
+http://127.0.0.1:8000/docs
+```
+
+### 13.4 Frontend Setup
+
+Open a separate terminal and navigate to the frontend directory:
 
 ```powershell
 cd frontend
+```
+
+Install the dependencies:
+
+```powershell
 npm install
+```
+
+Start the React development server:
+
+```powershell
 npm run dev
 ```
 
-Vite: `http://localhost:5173`. Its development proxy forwards `/api`, `/prediction` and `/weather` to `http://127.0.0.1:8000`. For another deployment, `VITE_API_BASE_URL` can set the HTTP base URL; do not put secrets in frontend environment variables.
+Frontend URL:
 
-Other declared frontend scripts are `npm run build`, `npm run lint` and `npm run preview`.
-
-### Rebuild the citizen vector store
-
-From `backend/`, after installing dependencies:
-
-```powershell
-python build_rag.py
+```text
+http://localhost:5173
 ```
 
-This rebuild reads Markdown under `Knowledge_Base_RAG/citizen/`, downloads/uses the configured sentence-transformer model as needed and writes the FAISS artifacts to `Knowledge_Base_RAG/citizen/vector_store/`. It does not index the `authority/` documents.
+### 13.5 Database Setup
 
-## Limitations and future scope
+1. Create a PostgreSQL project using Neon.
+2. Open the SQL Editor in the Neon dashboard.
+3. Execute the database table creation scripts supplied with the project.
+4. Copy the PostgreSQL connection string.
+5. Configure the `DATABASE_URL` environment variable.
+6. Verify that the backend can connect to the database.
 
-### Current limitations verified in code
+The database schema and initialization scripts included in the repository should be used as the source of truth for setting up all application tables.
 
-- Current AQI is obtained from a coordinate-based Google API and is marked model-based; it is not a direct reading from the repository's station-history table.
-- The Dashboard and AQI pages use fixed default coordinates; only the Health page requests browser geolocation.
-- Station data, analytics and source analysis require a reachable PostgreSQL database and the expected table.
-- Source signals are pollutant-anomaly heuristics. They do not quantify contributions, confirm sources or detect spatial hotspots.
-- SHAP explains a configured model's output, not the live provider AQI or the three project source categories.
-- The citizen RAG chain is wired but depends on an external LLM, local FAISS data and retrieval metadata; its extra evidence selector/filter modules are not used in the active route.
-- `STATION_MAPPING_PATH` defaults to a developer-specific Windows location and must be overridden for a local checkout if hourly weather context is desired in source analysis.
-- The UI presents no chart-based historical trends and does not yet expose source analysis, SHAP or station analytics.
-- No evaluation metrics are emitted by the active AQI inference endpoint. The accuracy/validity of model artifacts and source-signal interpretations needs separate validation.
-- The checked-in advisory scripts are primarily diagnostics, not a comprehensive automated API/integration test suite.
+---
 
-### Future scope
+## 14. Running the Complete Application
 
-- Complete and evaluate the Citizen RAG retrieval, grounding and output-validation workflow.
-- Implement the Policy Maker interface with Overview, Source Analysis, Policy Simulator and Reports.
-- Build a separate Policy Maker RAG workflow over authority documents, with source citations and evidence traceability.
-- Improve and validate sector-specific analysis for Transport, Road Dust and Industry; do not present signals as source contributions without a validated method.
-- Develop spatial hotspot analysis and sector-specific station views.
-- Add evidence-based policy recommendations based on appropriate government reports, source signals and AQI conditions.
-- Implement policy intervention simulation only after suitable models and supporting data are developed and validated.
-- Add historical reporting and analytics as dependable, quality-controlled data becomes available.
+For local demonstration, two separate terminals are required.
 
-## Verified Implementation Status
+**Terminal 1 – Backend**
 
-| Feature | Status | Actual implementation/files | Available for frontend integration? |
-|---|---|---|---|
-| Current location AQI and pollutant fields | Implemented | `api/air_quality.py`, `services/air_quality_service.py`, Google provider/parser | Yes; already used by Dashboard and AQI |
-| Station map data | Implemented, database-dependent | `api/pollution.py`, `services/pollution_service.py`, PostgreSQL `air_quality_data` | Yes; already used by Dashboard and AQI |
-| Daily AQI forecast | Implemented, model/configuration-dependent | `api/prediction.py`, `services/prediction_service.py`, LightGBM artifact and historical CSV | Yes; already used by Dashboard and AQI |
-| Daily/hourly weather | Implemented | `api/weather.py`, `services/weather_service.py`, Open-Meteo provider | Yes; daily route already used by AQI |
-| Source identification | Partial: anomaly-based signals, not attribution percentages | `api/source_identification.py`, `services/source_identification_service.py`, `services/source_calculation.py` | Yes, after database/configuration setup; not yet consumed by UI |
-| Station history analytics | Implemented, database-dependent | `api/analytics.py`, `services/analytics_service.py` | Yes; not yet consumed by UI |
-| Pollutant SHAP explanation | Implemented behind a compatible configured model | `api/shap.py`, `services/shap_service.py` | Yes; not yet consumed by UI |
-| Citizen deterministic personalization | Implemented | `api/advisory.py`, `services/aqi_service.py`, `services/personalization_service.py` | Yes; called by Health |
-| Citizen RAG + LLM advisory | Partially implemented / under development | `rag/`, `services/advisory_llm_service.py`, `services/advisory_validator.py`, citizen FAISS store | Wired to Health; requires operational retrieval, Groq key and validation |
-| Policy Maker UI | Planned; not implemented | Static “Policy Maker” text in `frontend/src/components/Navbar.jsx`; no page/routes | No |
-| Policy Maker RAG/recommendations | Planned; not implemented | Authority documents exist under `Knowledge_Base_RAG/authority/`; not loaded by active RAG | No |
-| Policy simulator | Planned; not implemented | No simulator route/service/page found | No |
+```powershell
+cd backend
+.venv\Scripts\activate
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
 
-## Documentation verification notes
+**Terminal 2 – Frontend**
 
-- This README was checked against the route registration, API/service implementations, model-loading code, frontend routes/hooks/services/components, dependency manifests, environment-variable references, RAG modules, knowledge-base/vector-store directory, data/model file inventory and the hourly-ingestion workflow.
-- Not every raw CSV row, binary model payload, FAISS pickle payload or report-PDF page was inspected. The serialized SHAP artifact's schema, model evaluation metrics, historical dataset provenance/quality, database schema/availability, live provider output and vector-store freshness therefore need independent verification.
-- No model-performance values, source percentages, unimplemented endpoints or policy capabilities are asserted.
-- Known frontend/backend differences: Dashboard/AQI use fixed coordinates while advisory uses browser coordinates; the navbar's Policy Maker label has no route; the frontend does not call source-analysis, SHAP, nearest-station or analytics endpoints; the UI's station-monitoring wording should be interpreted in light of the Google-history ingestion source; and the frontend requires a health-condition selection even though the backend accepts an empty list.
+```powershell
+cd frontend
+npm run dev
+```
+
+Open the frontend in a browser:
+
+```text
+http://localhost:5173
+```
+
+Ensure that the database is accessible and the required environment variables are configured before starting the application.
+
+---
+
+## 15. Project Demonstration Guide
+
+The following sequence can be followed during the final project demonstration.
+
+### Step 1: Introduction
+
+- Introduce VayuSuchak and its objective.
+- Explain the problem of fragmented air quality information.
+- Describe how the system combines monitoring, forecasting, source identification, and decision support.
+
+### Step 2: Citizen Portal
+
+- Open the application.
+- Navigate to the citizen dashboard.
+- Allow browser location access when prompted.
+- Show the location-based AQI information.
+- Explain the AQI category and pollutant values.
+
+### Step 3: Monitoring Station Map
+
+- Open the interactive monitoring station map.
+- Show the selected monitoring stations across Mumbai.
+- Explain how station locations and air quality information are visualized.
+- Select a station to examine its information.
+
+### Step 4: AQI Forecasting
+
+- Open the forecasting section.
+- Show the predicted AQI values.
+- Explain the LightGBM model and its input features.
+- Briefly discuss the chronological training and testing process.
+- Present the model evaluation metrics: MAE, RMSE, and R².
+
+### Step 5: Historical Trends
+
+- Open the trends section.
+- Demonstrate the available historical time ranges.
+- Show AQI and pollutant trends.
+- Explain how historical records help identify changes in pollution behaviour.
+
+### Step 6: Health Advisory
+
+- Open the citizen health advisory section.
+- Demonstrate the advisory generation process.
+- Explain how relevant health information is retrieved from the knowledge base.
+- Show how the response provides contextual guidance based on air quality.
+
+### Step 7: Policy Maker Authentication
+
+- Navigate to the policymaker portal.
+- Demonstrate the authorized policymaker login.
+- If registration is enabled, explain the invitation-code-based registration process.
+- Show the protected policymaker interface.
+
+### Step 8: Source Identification
+
+- Open the Source Analysis section.
+- Select a monitoring station.
+- Display the pollutant anomaly indicators.
+- Explain the 30-day historical median and MAD-based methodology.
+- Describe the association between pollutant indicators and potential pollution categories.
+- Clarify that the results represent relative anomaly-based indicators rather than exact source contribution percentages.
+
+### Step 9: Policy Insights
+
+- Open the Policy Insights section.
+- Demonstrate retrieval of relevant policy evidence.
+- Show the generated insights and recommendations.
+- Explain how the knowledge base supports the policymaker's analysis.
+
+### Step 10: Conclusion
+
+Conclude by explaining how VayuSuchak integrates air quality monitoring, machine learning forecasting, pollution source identification, and RAG-based decision support into one platform.
+
+---
+
+## 16. Expected Outcomes
+
+The proposed system provides:
+
+- A unified interface for accessing air quality information.
+- Improved visibility into monitoring station conditions.
+- Forecast-based awareness of possible future AQI changes.
+- Identification of unusual pollutant behaviour and potential pollution categories.
+- Better understanding of historical air quality trends.
+- Accessible health-related guidance for citizens.
+- Organized environmental and policy information for policymakers.
+
+The system aims to support informed environmental awareness and decision-making through integrated data and analytical services.
+
+---
+
+## 17. Limitations
+
+The current implementation has certain limitations:
+
+1. Forecast accuracy depends on the availability, quality, and representativeness of historical data.
+2. Source identification is based on pollutant associations and historical anomaly scores, not direct chemical source apportionment.
+3. Meteorological variations can influence pollutant concentrations and are not fully normalized in the current source identification methodology.
+4. External API availability, usage limits, and data coverage may affect the availability of live information.
+5. RAG-generated responses depend on the quality, relevance, and coverage of the documents in the knowledge base.
+6. The system is designed as a decision-support platform and does not replace official pollution-control authorities or regulatory procedures.
+
+---
+
+## 18. Future Scope
+
+The project can be enhanced through the following extensions:
+
+- Integration of additional real-time monitoring stations and IoT sensors.
+- Weather-normalized source identification using meteorological variables.
+- Integration of satellite-based pollution observations and fire hotspot information.
+- Advanced source apportionment using chemically speciated pollutant measurements.
+- Improved forecasting through additional model architectures and external environmental features.
+- Multilingual health advisories.
+- Automated alert and notification mechanisms.
+- Persistent storage of policymaker analysis and test results.
+- Expanded policy knowledge base with more government documents and updated regulations.
+- Additional integrations and workflow automation for environmental monitoring and governance.
+
+---
+
+## 19. Conclusion
+
+VayuSuchak presents an integrated AI-driven approach to urban air quality monitoring and decision support, with a focus on Mumbai. The platform combines environmental data collection, interactive visualization, machine learning-based AQI forecasting, research-guided pollution source identification, and Retrieval-Augmented Generation to address the limitations of conventional air quality monitoring applications.
+
+By providing separate interfaces for citizens and policymakers, the system makes air quality information more accessible while offering analytical support for understanding pollution trends and potential source categories. The forecasting module provides insights into possible future AQI conditions, while the source identification and RAG modules help organize environmental evidence and relevant recommendations.
+
+Overall, VayuSuchak demonstrates how artificial intelligence, data analytics, and knowledge retrieval can be integrated into a unified platform to support environmental awareness and informed decision-making.
+
+---
+
+## 20. Project Information
+
+| Field | Details |
+|---|---|
+| Project Title | AI-Driven Pollution Source Identification, Forecasting & Policy Decision Support Dashboard for Mumbai |
+| Project Name | VayuSuchak |
+| Project Type | Final Year Engineering Project |
+| Degree | Bachelor of Engineering |
+| Department | Computer Engineering |
+| Institution | Vivekanand Education Society's Institute of Technology (VESIT) |
+| Academic Year | 2026–2027 |
+| Domain | Artificial Intelligence, Machine Learning, Big Data, Environmental Monitoring |
+| Frontend | React.js |
+| Backend | FastAPI |
+| Database | PostgreSQL (Neon) |
+| Forecasting Model | LightGBM |
+| Version Control | GitHub |
+
+### Project Team
+
+Add the names and details of all team members below:
+
+| Sr. No. | Team Member | Class/Roll no |
+|---|---|---|
+| 1 | Madhura Walawalkar | D17A/63 |
+| 2 | Jaee Sakharkar | D17A/52 |
+| 3 | Sanskruti Ukarande | D17A/62 |
+
+
+### Project Guide
+
+**Project Guide:** Mrs. Rupali Soni
+
+**Department:** Computer Engineering
+
+**Institution:** Vivekanand Education Society's Institute of Technology (VESIT)
+
+---
+
+## 21. References
+
+1. Central Pollution Control Board (CPCB) – https://cpcb.nic.in/
+2. Maharashtra Pollution Control Board (MPCB) – https://mpcb.gov.in/
+3. Google Maps Platform – Air Quality API – https://developers.google.com/maps/documentation/air-quality
+4. Open-Meteo – https://open-meteo.com/
+5. Neon – Serverless PostgreSQL – https://neon.tech/
+6. FastAPI Documentation – https://fastapi.tiangolo.com/
+7. React Documentation – https://react.dev/
+8. LightGBM Documentation – https://lightgbm.readthedocs.io/
+9. MPCB, *Final Report: Air Quality Assessment, Emission Inventory & Source Apportionment Study for Mumbai City*, December 2023.
+10. Relevant research papers, environmental standards, government reports, and reference documents used during project development.
+
+---
+
+<p align="center">
+  <b>VayuSuchak – Making Air Quality Information More Accessible, Predictive, and Actionable.</b>
+</p>

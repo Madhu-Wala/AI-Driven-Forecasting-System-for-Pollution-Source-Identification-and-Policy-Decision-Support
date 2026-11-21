@@ -67,7 +67,10 @@ export default function SourceAnalysis() {
     {selected && <>
       <section className="card policy-station-toolbar">
         <StationSelector stations={state.stations} value={selection} onChange={setSelection} />
-        <div><span className="eyebrow">Selected station</span><strong>{selected.station_name || selected.station_id}</strong><span className="muted">{selected.station_id} · {selected.latitude ?? '—'}, {selected.longitude ?? '—'}</span></div>
+        <div>
+          <span className="eyebrow">Selected station</span>
+          <strong>{selected.station_name || selected.station_id}</strong>
+          <span className="muted">{selected.station_id} · {selected.latitude ?? '—'}, {selected.longitude ?? '—'}</span></div>
       </section>
 
       <SourceScoreCard scores={scores} labels={selected.source_signal_labels || {}} />

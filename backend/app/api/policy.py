@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
+from app.auth.dependencies import require_policy_maker
+from fastapi import Depends
 
 from app.rag.authority_vector_store import (
     build_authority_vector_store,

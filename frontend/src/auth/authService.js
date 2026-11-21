@@ -1,38 +1,96 @@
-const DEMO_SESSION_KEY = 'vayusuchak_demo_admin_authenticated'
-const configuredUsername = import.meta.env.VITE_ADMIN_USERNAME
-const configuredPassword = import.meta.env.VITE_ADMIN_PASSWORD
-const configurationMessage = 'Administrator demo authentication is not configured. Set VITE_ADMIN_USERNAME and VITE_ADMIN_PASSWORD.'
 
-export class AuthenticationConfigurationError extends Error {
-  constructor() {
-    super(configurationMessage)
-    this.name = 'AuthenticationConfigurationError'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+
+async function request(endpoint, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
+
+  const data = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    throw new Error(data.detail || data.message || 'Something went wrong.')
   }
+
+  return data
 }
 
-export class InvalidCredentialsError extends Error {
-  constructor() {
-    super('Invalid administrator credentials')
-    this.name = 'InvalidCredentialsError'
+function saveSession(data) {
+  const token = data.access_token || data.token
+
+  if (!token) {
+    throw new Error('The server did not return an access token.')
   }
+
+  localStorage.setItem('vayusuchak_access_token', token)
+
+  if (data.user) {
+    localStorage.setItem('vayusuchak_user', JSON.stringify(data.user))
+  }
+
+  return data.user || null
+}
+
+export async function signIn(identifier, password) {
+  const data = await request('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ identifier, password }),
+  })
+
+  const user = saveSession(data)
+
+  return user
+}
+
+export async function signUp(formData) {
+  return request('/api/auth/signup', {
+    method: 'POST',
+    body: JSON.stringify({
+      full_name: formData.full_name,
+      username: formData.username,
+      email: formData.email,
+      password: formData.password,
+      invitation_code: formData.invitation_code,
+    }),
+  })
 }
 
 export async function restoreSession() {
-  if (sessionStorage.getItem(DEMO_SESSION_KEY) !== 'true') return null
-  return { role: 'administrator' }
+  const token = localStorage.getItem('vayusuchak_access_token')
+
+  if (!token) {
+    return null
+  }
+
+  try {
+    const data = await request('/api/auth/me', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    const user = data.user || data
+
+    localStorage.setItem('vayusuchak_user', JSON.stringify(user))
+
+    return user
+  } catch {
+    localStorage.removeItem('vayusuchak_access_token')
+    localStorage.removeItem('vayusuchak_user')
+    return null
+  }
 }
 
-export async function signIn({ identifier, password }) {
-  if (!configuredUsername || !configuredPassword) {
-    throw new AuthenticationConfigurationError()
-  }
-  if (identifier !== configuredUsername || password !== configuredPassword) {
-    throw new InvalidCredentialsError()
-  }
-  sessionStorage.setItem(DEMO_SESSION_KEY, 'true')
-  return { role: 'administrator' }
+export function signOut() {
+  localStorage.removeItem('vayusuchak_access_token')
+  localStorage.removeItem('vayusuchak_user')
 }
 
-export async function signOut() {
-  sessionStorage.removeItem(DEMO_SESSION_KEY)
+export function getAccessToken() {
+  return localStorage.getItem('vayusuchak_access_token')
 }
