@@ -14,7 +14,7 @@
 
 | Resource | Link |
 |---|---|
-| Project Report | [Report](https://github.com/Madhu-Wala/AI-Driven-Forecasting-System-for-Pollution-Source-Identification-and-Policy-Decision-Support) |
+| Project Report | [Report](https://docs.google.com/document/d/12R4H-DBkll2QTwdS2W-ohaZ5XqJvMmeB/edit?usp=sharing&ouid=114725319132321397156&rtpof=true&sd=true) |
 | Project Presentation (PPT) | [Presentation](https://docs.google.com/presentation/d/1dnhZrcr3A9o9wrczXguAogY0_UC04pUN/edit?usp=sharing&ouid=114725319132321397156&rtpof=true&sd=true) |
 | Project Demonstration Video | [Video](https://drive.google.com/drive/folders/1fL83CazwrLBA_vHcQ8pG5mo8Jhcf9czg) |
 | GitHub Repository | [Repository](https://github.com/Madhu-Wala/AI-Driven-Forecasting-System-for-Pollution-Source-Identification-and-Policy-Decision-Support) |
